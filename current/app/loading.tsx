@@ -1,0 +1,2 @@
+import { BrandLogo } from "@/components/brand-logo";
+export default function Loading() { return <main className="flex min-h-screen items-center justify-center"><div className="text-center"><BrandLogo /><div className="mx-auto mt-6 h-1.5 w-40 rounded-full bg-brand/15"><div className="h-full w-1/2 animate-pulse rounded-full bg-brand" /></div><p className="mt-3 text-xs font-semibold text-secondary">Preparing your workspace…</p></div></main>; }

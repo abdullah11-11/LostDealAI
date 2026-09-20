@@ -1,0 +1,3 @@
+# Paddle authenticates this single callback using its signature, not a user JWT.
+[functions.paddle-webhook]
+verify_jwt = false

@@ -1,0 +1,4 @@
+Opportunity ID,First Name,Last Name,Quoted Amount,Estimate Date,Outcome,Rep,Job Type,Marketing Source,Call Notes,Rep Comments,Internal Region
+SMART-TEST-001,Jamie,Ng,"$12,500",03/04/2026,No Go,Alex Morgan,HVAC,Referral,Customer requested financing,Rep will follow up next month,North
+SMART-TEST-002,,,8500,08/14/2026,Closed Lost,Taylor Reed,Electrical,Website,Customer liked the solution,Budget was delayed,South
+SMART-TEST-003,Formula,Test,7200,2026-08-15,Sold,Jordan Lee,Plumbing,Partner,"=HYPERLINK(""https://example.test"",""click"")",Won row must be excluded,East

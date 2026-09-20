@@ -1,0 +1,12 @@
+external_deal_id,customer_name,deal_value,quote_date,status,salesperson,service_type,lead_source,sales_notes,transcript
+SYN-HVAC-1001,Synthetic Maple Household,"$8,500",2026-01-12,closed lost,Avery Cole,Heat pump replacement,Website,"Synthetic example: homeowner liked the efficiency but needed a lower monthly payment.","Customer said, ""The system looks right, but financing needs to stay under our monthly budget."""
+SYN-HVAC-1002,Synthetic Northwind Bakery,12400.00,2026-01-18,lost,Jordan Lee,Commercial rooftop unit,Referral,"Synthetic example: proposal was above the competitor's price and the buyer chose the lower bid.",
+SYN-HVAC-1003,Synthetic Cedar Residence,6750,2026-02-03,unsold,Morgan Diaz,Furnace replacement,Local search,"Synthetic example: customer plans to revisit the project after the next heating season.",
+SYN-HVAC-1004,Synthetic Bluebird Studio,"$ 9,250.00",2026-02-17,declined,Casey Shah,Ductless mini-split,Social media,"Synthetic example: tenant liked the option but building-owner approval was not obtained.",
+SYN-HVAC-1005,Synthetic Harbor Workshop,"11,800 USD",2026-03-01,not won,Riley Chen,Air conditioning replacement,Trade show,"Synthetic example: buyer selected an incumbent HVAC vendor with an existing service agreement.",
+SYN-HVAC-1006,Synthetic Juniper Household,4300,2026-03-14,lost,Taylor Brooks,Duct repair,Referral,"Synthetic example: several follow-up calls and messages received no response.",
+SYN-HVAC-1007,Synthetic Summit Clinic,15850,2026-04-02,closed_lost,Avery Cole,Indoor air quality upgrade,Partner,"Synthetic example: capital approval was deferred to the next budgeting cycle.","Facilities lead said, ""The air-quality case is strong; timing is the issue for this quarter."""
+SYN-HVAC-1008,Synthetic Orchard Residence,7900.50,2026-04-19,lost,Jordan Lee,Heat pump replacement,Website,"Synthetic example: customer was concerned about installation disruption and postponed the project.",
+SYN-HVAC-1009,Synthetic Crescent Café,5200,2026-05-06,not sold,Morgan Diaz,Kitchen ventilation service,Local search,"Synthetic example: decision-maker could not align with the operator on scope.",
+SYN-HVAC-1010,Synthetic Pinecrest Office,13600,2026-05-21,lost,Casey Shah,Packaged HVAC unit,Referral,"Synthetic example: prospect requested references, then chose a competitor promising earlier availability.","Prospect said, ""We need installation before June, so we went with the vendor who confirmed the earlier date."""
+
