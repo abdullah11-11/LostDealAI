@@ -12,7 +12,7 @@ export const MARKETING_NAVIGATION = Object.freeze([
   { label: "Product", href: "/product" },
   { label: "How It Works", href: "/#how-it-works" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Trust", href: "/#trust" },
+  { label: "Security", href: "/security" },
 ] as const);
 
 export const TRUST_ITEMS = Object.freeze([
@@ -31,7 +31,7 @@ export const WORKFLOW_STEPS = Object.freeze([
   {
     number: "02",
     title: "Clean",
-    description: "Auto Convert turns inconsistent CRM columns and notes into LostDeal’s canonical structure.",
+    description: "Map and validate your CSV. On Pro, Auto Convert can prepare inconsistent columns and notes.",
   },
   {
     number: "03",

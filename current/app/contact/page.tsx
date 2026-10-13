@@ -1,0 +1,11 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { MarketingShell } from "@/components/marketing/marketing-shell";
+import { MarketingSection, MarketingEyebrow } from "@/components/marketing/marketing-primitives";
+import { approvedLaunchDetails } from "@/lib/marketing/launch";
+export const metadata: Metadata = { title: "Contact & support", alternates: { canonical: "/contact" } };
+export default function Page() {
+  if (!approvedLaunchDetails) notFound();
+  return <MarketingShell><main id="main-content"><MarketingSection><div className="mx-auto max-w-3xl"><MarketingEyebrow>Help & support</MarketingEyebrow><h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">Get help with your recovery workflow.</h1><p className="mt-5 text-lg leading-8 text-marketing-slate">For import, account or billing help, describe the page and the issue. Avoid sending passwords, API keys, payment-card details or unnecessary customer data.</p><a href={`mailto:${approvedLaunchDetails.supportEmail}`} className="mt-6 inline-flex min-h-11 items-center rounded-lg border border-marketing-line bg-marketing-white px-5 text-base font-semibold break-all">{approvedLaunchDetails.supportEmail}</a><div className="mt-10 space-y-5"><h2 className="text-xl font-semibold">Before you contact us</h2><p className="text-base leading-7 text-marketing-slate">For CSV imports, check required fields and the row-level validation message. For a billing update, include the time and plan involved. Do not repeat an uncertain payment or plan change.</p><Link href="/settings/help" className="inline-flex min-h-11 items-center text-sm font-semibold hover:underline">Open workspace help</Link><p className="text-base leading-7 text-marketing-slate">Privacy requests: <a className="underline break-all" href={`mailto:${approvedLaunchDetails.privacyEmail}`}>{approvedLaunchDetails.privacyEmail}</a>.</p><p className="text-sm leading-7 text-marketing-slate">LostDeal AI is operated by {approvedLaunchDetails.sellerName}, based in {approvedLaunchDetails.sellerLocality}, {approvedLaunchDetails.sellerCountry}.</p></div></div></MarketingSection></main></MarketingShell>;
+}

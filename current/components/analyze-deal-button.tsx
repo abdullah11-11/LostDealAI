@@ -5,24 +5,29 @@ import { useRouter } from "next/navigation";
 import { Bot, LoaderCircle, RotateCcw } from "lucide-react";
 
 import { buttonStyles } from "@/components/ui";
+import { useWorkspaceAccess } from "@/components/workspace-access";
 
 export function AnalyzeDealButton({
   dealId,
   retry = false,
   label,
   primary = true,
+  savedResultOnly = false,
 }: {
   dealId: string;
   retry?: boolean;
   label?: string;
   primary?: boolean;
+  savedResultOnly?: boolean;
 }) {
   const router = useRouter();
+  const { restricted } = useWorkspaceAccess();
+  const blocked = restricted && !savedResultOnly;
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   async function analyze() {
-    if (loading) return;
+    if (loading || blocked) return;
     setLoading(true);
     setMessage("LostDeal AI is analyzing this deal. Keep this page open.");
     try {
@@ -47,7 +52,7 @@ export function AnalyzeDealButton({
 
   return (
     <div>
-      <button type="button" onClick={analyze} disabled={loading} className={buttonStyles(primary ? "primary" : "outline", "w-full sm:w-auto")}>
+      <button type="button" onClick={analyze} disabled={loading || blocked} title={blocked ? "An active plan is required for new AI analyses." : undefined} className={buttonStyles(primary ? "primary" : "outline", "w-full sm:w-auto")}>
         {loading ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : retry ? <RotateCcw aria-hidden="true" className="size-4" /> : <Bot aria-hidden="true" className="size-4" />}
         {loading ? "Analyzing…" : label || (retry ? "Retry Analysis" : "Analyze Deal")}
       </button>

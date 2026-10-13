@@ -20,7 +20,9 @@ export function PasswordRecoveryScreen({
 }) {
   const forgot = mode === "forgot";
   const action = forgot ? forgotPasswordAction : resetPasswordAction;
-  const [state, formAction, pending] = useActionState(action, INITIAL_STATE);
+  const [actionState, formAction, pending] = useActionState(action, INITIAL_STATE);
+  // A successful server-action redirect can finish before navigation unmounts this form.
+  const state = actionState ?? INITIAL_STATE;
   const invalidRecovery = !forgot && !recoveryValid;
 
   return (

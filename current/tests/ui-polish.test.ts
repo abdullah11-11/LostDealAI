@@ -64,19 +64,19 @@ test("light, dark, and system themes use one semantic token system with light de
     source("components/theme-selector.tsx"),
   ]);
   for (const token of [
-    "--background: #fffcf7",
-    "--sidebar-background: #fff9f0",
+    "--background: #f7f8fa",
+    "--sidebar-background: #f3f4f6",
     "--surface: #ffffff",
-    "--surface-raised: #fff7e8",
-    "--surface-hover: #fff3dd",
-    "--border: #e7dfd2",
-    "--brand: #f97316",
-    "--brand-hover: #ea580c",
-    "--text-primary: #1f2937",
-    "--background: #11100d",
-    "--sidebar-background: #171510",
-    "--surface: #1d1a14",
-    "--surface-raised: #252119",
+    "--surface-raised: #f8f9fb",
+    "--surface-hover: #eceef2",
+    "--border: #e4e7ec",
+    "--brand: #c2410c",
+    "--brand-hover: #9a3412",
+    "--text-primary: #182230",
+    "--background: #13161c",
+    "--sidebar-background: #171b22",
+    "--surface: #1c212a",
+    "--surface-raised: #232a35",
     "--brand: #fb923c",
     "--text-primary: #fafaf9",
   ]) assert.match(theme, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -138,14 +138,15 @@ test("shared controls preserve semantic status colors and accessible focus styli
   assert.match(ui, /text-on-brand/);
 });
 
-test("navigation stays focused and exposes theme control on desktop and mobile", async () => {
+test("navigation exposes the implemented workspace routes and reachable appearance settings", async () => {
   const shell = await source("components/dashboard-shell.tsx");
   for (const route of ["/dashboard", "/deals", "/upload"]) assert.match(shell, new RegExp(`href: "${route}"`));
   assert.match(shell, /aria-current=\{active \? "page"/);
   assert.match(shell, /aria-label="Log out"/);
-  assert.match(shell, /<ThemeSelector \/>/);
-  assert.match(shell, /<ThemeSelector compact \/>/);
-  assert.doesNotMatch(shell, /Reports|Settings|Contacts/);
+  assert.match(shell, /href="\/settings"/);
+  assert.match(shell, /<Dialog open=\{mobileOpen\}/);
+  assert.match(await source("app/(dashboard)/settings/page.tsx"), /<ThemeSelector compact/);
+  assert.doesNotMatch(shell, /Reports|Contacts/);
 });
 
 test("dashboard has four compact KPIs, action-first content, and three local sections", async () => {

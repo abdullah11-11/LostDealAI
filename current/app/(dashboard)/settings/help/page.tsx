@@ -1,0 +1,12 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Card, buttonStyles } from "@/components/ui";
+import { approvedLaunchDetails } from "@/lib/marketing/launch";
+import { requireOrganization } from "@/lib/auth/server";
+
+export const metadata: Metadata = { title: "Help" };
+export const dynamic = "force-dynamic";
+export default async function HelpSettings() {
+  await requireOrganization("/settings/help");
+  return <><Card title="From import to a recovery decision"><ol className="divide-y divide-line"><li className="p-5 sm:p-6"><h3 className="text-base font-medium">1. Bring in your lost deals</h3><p className="mt-2 text-base leading-7 text-secondary">Choose a CSV, map its columns, resolve validation warnings and confirm the import. Start with a sample if you want to see the required format.</p><Link href="/upload" className={buttonStyles("outline", "mt-4")}>Open Imports</Link></li><li className="p-5 sm:p-6"><h3 className="text-base font-medium">2. Analyze deliberately</h3><p className="mt-2 text-base leading-7 text-secondary">Choose a deal or a bounded batch. Read the provider notice and confirm the work. Saved results are reused when you return.</p><Link href="/deals" className={buttonStyles("outline", "mt-4")}>Open Deals</Link></li><li className="p-5 sm:p-6"><h3 className="text-base font-medium">3. Review the strongest opportunities</h3><p className="mt-2 text-base leading-7 text-secondary">Calculate a Recovery Score from the stored analysis, then use the queue to review evidence and decide on outreach. LostDeal does not send messages for you.</p><Link href="/recovery" className={buttonStyles("outline", "mt-4")}>Open Recovery Queue</Link></li></ol></Card><Card title="Questions about the product"><div className="settings-row"><p className="text-base leading-7 text-secondary">See the product guide and pricing information for supported features, usage allowances and plan differences.</p><div className="flex flex-wrap gap-2"><Link href="/product" className={buttonStyles("outline")}>Product guide</Link><Link href="/pricing" className={buttonStyles("outline")}>Pricing</Link></div></div></Card>{approvedLaunchDetails && <Card title="Contact support"><div className="settings-row"><p className="text-base leading-7 text-secondary">For import, account or billing questions, include the page and what happened. Do not send passwords, keys or unnecessary customer data.</p><Link href="/contact" className={buttonStyles("outline")}>Contact support</Link></div></Card>}</>;
+}

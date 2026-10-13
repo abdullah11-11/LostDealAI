@@ -861,7 +861,7 @@ test("all applied migrations remain immutable and Prompt 15.3.6 requires no migr
     "20260908055554_prompt15_3_5_deep_semantic_diagnostic_hardening.sql": "d5b84f7aa151177337eae53d684aa480b4af6fb818d50f8b3b952dfd01916cd8",
   };
   const actual = readdirSync(`${root}/supabase/migrations`).filter((file) => file.endsWith(".sql")).sort();
-  assert.deepEqual(actual, [...Object.keys(hashes), "20260916095842_prompt16_paddle_billing_foundation.sql"]);
+  assert.deepEqual(actual, [...Object.keys(hashes), "20260916095842_prompt16_paddle_billing_foundation.sql", "20260917144440_prompt16_authority_dual_verifier.sql", "20260921064300_prompt16_paddle_simulator_event_id_compat.sql", "20260921073247_prompt16_authority_rotation_finalize.sql", "20260922083319_prompt16_billing_operation_rejection_recovery.sql", "20261005185926_prompt17a_atomic_operations_and_authorization.sql"]);
   assert.equal(actual.some((file) => file.includes("prompt15_3_6")), false);
   for (const [file, expected] of Object.entries(hashes)) {
     assert.equal(createHash("sha256").update(sourceFile(`supabase/migrations/${file}`)).digest("hex"), expected, file);

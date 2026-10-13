@@ -40,6 +40,7 @@ export function validateLogin(formData: FormData) {
   }
 
   if (!password) fieldErrors.password = "Enter your password.";
+  else if (password.length > 128) fieldErrors.password = "Use 128 characters or fewer for your password.";
 
   return { email, password, fieldErrors };
 }
@@ -96,7 +97,7 @@ export function hasFieldErrors(errors: FieldErrors): boolean {
   return Object.keys(errors).length > 0;
 }
 
-const APP_DESTINATIONS = ["/dashboard", "/deals", "/upload", "/account", "/onboarding"];
+const APP_DESTINATIONS = ["/dashboard", "/deals", "/recovery", "/insights", "/settings", "/upload", "/account", "/onboarding"];
 
 /** Allows only same-application paths and rejects protocol-relative URLs. */
 export function getSafeNextPath(value: string | null | undefined): string {
@@ -116,6 +117,27 @@ export function getSafeNextPath(value: string | null | undefined): string {
   } catch {
     return "/dashboard";
   }
+}
+
+/** Never mistake an unavailable Auth service for a rejected password. */
+export function friendlyLoginError(error: unknown): string {
+  const code = errorCode(error);
+
+  // Keep account state indistinguishable from rejected credentials.
+  if (
+    code === "invalid_credentials" ||
+    code === "user_not_found" ||
+    code === "email_not_confirmed" ||
+    code === "user_banned"
+  ) {
+    return "Invalid email or password.";
+  }
+  if (code === "over_request_rate_limit") {
+    return "Too many sign-in attempts. Wait a moment and try again.";
+  }
+
+  // Do not expose raw provider messages, request details or credentials.
+  return "Sign-in is temporarily unavailable. Please try again shortly.";
 }
 
 export function friendlySignupError(error: unknown): string {

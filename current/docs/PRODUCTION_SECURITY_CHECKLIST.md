@@ -1,12 +1,18 @@
 # LostDeal AI V1 production security checklist
 
+Current development/activation status is documented in
+[the activation runbook](COMMERCIAL_ACTIVATION_RUNBOOK.md). Completed entries
+below retain dated milestone evidence; external configuration and real-world
+acceptance remain separate gates. Production is still Version 49,
+owner-private, Sandbox/SHADOW. The Live authority proposal is unapplied.
+
 Use this checklist before expanding access beyond the current owner-only Site.
 
 ## Application controls
 
 - [x] Verified server identity uses Supabase `getClaims()`.
 - [x] Active organization is resolved server-side; browser organization IDs are never authorization truth.
-- [x] RLS remains enabled on all eight public application tables.
+- [x] RLS remains enabled on the eleven public application tables in the accepted Prompt 17/18 source and catalog evidence; new private Live proposal tables require their own isolated/persistent acceptance.
 - [x] Mutation API routes enforce same-origin/Fetch Metadata checks and expected content types.
 - [x] Distributed D1 rate limiting protects AI, upload, scoring, and deal-deletion mutations.
 - [x] Forgot Password uses the same D1 architecture at 5 attempts per 15 minutes with a SHA-256 hashed normalized-email key; raw email is not stored in limiter telemetry.

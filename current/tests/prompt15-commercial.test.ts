@@ -101,7 +101,7 @@ test("the applied Prompt 15 migration remains intact beside its authorized forwa
     "20260905083511_prompt15_3_2_usage_reservation_runtime_hotfix.sql",
     "20260906080228_prompt15_3_3_recovery_sort_rpc_auth_hotfix.sql",
     "20260908055554_prompt15_3_5_deep_semantic_diagnostic_hardening.sql",
-    "20260916095842_prompt16_paddle_billing_foundation.sql",
+    "20260916095842_prompt16_paddle_billing_foundation.sql", "20260917144440_prompt16_authority_dual_verifier.sql", "20260921064300_prompt16_paddle_simulator_event_id_compat.sql", "20260921073247_prompt16_authority_rotation_finalize.sql", "20260922083319_prompt16_billing_operation_rejection_recovery.sql", "20261005185926_prompt17a_atomic_operations_and_authorization.sql",
   ]);
   const migration = source("supabase/migrations/20260901000000_prompt15_commercial_foundation.sql");
   assert.match(migration, /create table public\.organization_subscriptions/i);
@@ -282,7 +282,7 @@ test("AI Smart Mapping follows authorization, rate, reservation, provider, commi
     "enforceRateLimitOrRespond",
     "reserveOrganizationUsage",
     "suggestCsvMapping",
-    "commitOrganizationUsage",
+    "saveOperation",
   ].map((term) => route.indexOf(term, route.indexOf("export async function POST")));
   assert.ok(ordered.every((index) => index >= 0));
   assert.deepEqual([...ordered].sort((a, b) => a - b), ordered);
@@ -291,12 +291,15 @@ test("AI Smart Mapping follows authorization, rate, reservation, provider, commi
   assert.match(route, /if \(!reservation\.isNew\)[\s\S]*status: 409/);
 });
 
-test("import usage counts actual inserted rows, including partial-batch success", () => {
+test("import atomically commits only ready rows and rolls back partial-batch failure", () => {
   const route = source("app/api/uploads/import/route.ts");
-  assert.match(route, /"IMPORTED_DEALS",\s*validation\.readyRows\.length/);
-  assert.match(route, /insertedCount \+= batch\.length/);
-  assert.match(route, /finally[\s\S]*insertedCount > 0[\s\S]*commitOrganizationUsage\([\s\S]*insertedCount/);
-  assert.doesNotMatch(route, /commitOrganizationUsage\([\s\S]*validation\.totalRows/);
+  const sql = source("supabase/migrations/20261005185926_prompt17a_atomic_operations_and_authorization.sql");
+  assert.match(route, /rpc\("persist_deal_import"/);
+  assert.match(route, /target_rows: rows/);
+  assert.match(sql, /row_count := jsonb_array_length\(target_rows\)/);
+  assert.match(sql, /'IMPORTED_DEALS',[\s\S]*reservation.reservation_token,row_count/);
+  assert.match(sql, /IMPORT_USAGE_COMMIT_FAILED/);
+  assert.doesNotMatch(route, /\.insert\(|commitOrganizationUsage/);
 });
 
 test("deterministic/manual mapping, normalization, scoring, and page loads consume zero usage", () => {

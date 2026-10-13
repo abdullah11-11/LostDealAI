@@ -1,5 +1,19 @@
 # LostDeal AI
 
+LostDeal AI is a genuine B2B SaaS application. Development source, deployed
+production and commercial activation are separate states: production remains
+owner-private Sites Version 49 with Paddle Sandbox and SHADOW usage rollout.
+The newer development candidate is not a production release. Live preparation
+is dormant until its reviewed authority/catalog, configuration and real-world
+acceptance gates pass. No paid launch or customer revenue is claimed.
+
+Start with the [current architecture](docs/ARCHITECTURE_CURRENT.md),
+[restore/setup procedure](docs/RESTORE_AND_SETUP.md) and
+[future activation runbook](docs/COMMERCIAL_ACTIVATION_RUNBOOK.md). The final
+preservation report, file manifest and private GitHub PR identify the exact
+accepted source and current validation results. Historical milestone sections
+below describe their own scope and are not current provider-acceptance claims.
+
 LostDeal AI helps businesses understand why sales opportunities were lost and
 identify which deals may be worth recovering.
 
@@ -69,6 +83,9 @@ file structure and Next.js APIs.
 - `/deals/[id]`
 - `/upload`
 - `/account`
+- `/recovery`
+- `/insights`
+- `/settings` and its account/analysis/privacy/help subroutes
 - `/forgot-password`
 - `/reset-password`
 
@@ -147,7 +164,7 @@ The Prompt 15 rollout mode is `SHADOW`: usage is measured when the migration is
 available, while provider-backed Auto Convert and Deep Analysis stay limited to `INTERNAL` and
 existing core access remains unchanged before checkout and subscription
 synchronization exist. The browser cannot choose a plan, usage limit, period,
-enforcement mode, or usage authority. There is no payment SDK, checkout, webhook, provider
+enforcement mode, or usage authority. At the original Prompt 15 milestone there was no payment SDK, checkout, webhook, provider
 secret, or card storage. Paddle is preferred subject to approval, Lemon Squeezy
 is the fallback, and billing remains unavailable. See
 [`docs/BILLING_ARCHITECTURE.md`](docs/BILLING_ARCHITECTURE.md),

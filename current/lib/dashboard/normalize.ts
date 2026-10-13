@@ -42,7 +42,7 @@ function normalizeAnalysisRow(value: unknown): DashboardAnalysisRecord | null {
       : null,
     recoveryPriority: rawPriority && PRIORITY_SET.has(rawPriority) ? rawPriority as RecoveryPriority : null,
     recommendedAction: nullableString(row.recommended_action),
-    scoringCalculatedAt: scoringCalculatedAt(row.model_metadata),
+    scoringCalculatedAt: nullableString(row.scoring_calculated_at) ?? scoringCalculatedAt(row.model_metadata),
   };
 }
 

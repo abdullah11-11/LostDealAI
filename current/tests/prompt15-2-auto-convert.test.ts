@@ -481,7 +481,8 @@ test("Upload UI exposes active, teaser, fallback, privacy, progress, and bounded
   assert.match(component, /Auto Convert with AI/);
   assert.match(component, /Let LostDeal AI automatically map, clean and prepare this file/);
   assert.match(component, /Available with Pro/);
-  assert.match(component, /Upgrade available when billing launches/);
+  assert.match(component, /href="\/account\?plan=PRO"/);
+  assert.doesNotMatch(component, /when billing launches/);
   assert.match(component, /Continue with Smart Mapping/);
   assert.match(component, /Use Smart Mapping instead/);
   assert.match(component, /selected column names and bounded row content/);

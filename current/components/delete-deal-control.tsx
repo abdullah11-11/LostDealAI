@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, Trash2 } from "lucide-react";
 
+import { Dialog } from "@/components/dialog";
 import { buttonStyles } from "@/components/ui";
 
 export function DeleteDealControl({ dealId }: { dealId: string }) {
@@ -36,46 +37,12 @@ export function DeleteDealControl({ dealId }: { dealId: string }) {
     }
   }
 
-  if (!confirming) {
-    return (
-      <div>
-        <button
-          type="button"
-          onClick={() => { setConfirming(true); setError(null); }}
-          className={buttonStyles("outline", "border-red-500/35 text-danger-content hover:bg-red-500/10")}
-        >
-          <Trash2 aria-hidden="true" className="size-4" /> Delete Deal
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl border border-red-500/35 bg-red-500/10 p-4">
-      <p className="text-sm font-bold text-danger-content">Permanently delete this deal?</p>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-danger-content">
-        Deleting this deal removes the stored deal and its LostDeal AI analysis from this workspace. This action cannot be undone.
-      </p>
-      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row">
-        <button
-          type="button"
-          disabled={deleting}
-          onClick={() => { setConfirming(false); setError(null); }}
-          className={buttonStyles("outline")}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          disabled={deleting}
-          onClick={() => void deleteDeal()}
-          className={buttonStyles("destructive")}
-        >
-          {deleting ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : <Trash2 aria-hidden="true" className="size-4" />}
-          {deleting ? "Deleting…" : "Yes, Delete Deal"}
-        </button>
-      </div>
+  return <div>
+    <button type="button" onClick={() => { setConfirming(true); setError(null); }} className={buttonStyles("outline", "border-red-500/35 text-danger-content hover:bg-red-500/10")}><Trash2 aria-hidden="true" className="size-4" /> Delete Deal</button>
+    <Dialog open={confirming} closeDisabled={deleting} onClose={() => { if (!deleting) { setConfirming(false); setError(null); } }} title="Permanently delete this deal?" description="This action cannot be undone.">
+      <p className="text-base leading-7 text-secondary">Deleting this deal removes the stored deal and its LostDeal AI analysis from this workspace. Recorded usage is preserved.</p>
+      <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" disabled={deleting} onClick={() => { setConfirming(false); setError(null); }} className={buttonStyles("outline")}>Cancel</button><button type="button" disabled={deleting} onClick={() => void deleteDeal()} className={buttonStyles("destructive")}>{deleting ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : <Trash2 aria-hidden="true" className="size-4" />}{deleting ? "Deleting…" : "Yes, Delete Deal"}</button></div>
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-danger-content">{error}</p>}
-    </div>
-  );
+    </Dialog>
+  </div>;
 }

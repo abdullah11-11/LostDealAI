@@ -89,21 +89,5 @@ const comparisonRows = [
 ] as const;
 
 export function PricingComparison() {
-  return (
-    <div className="overflow-hidden rounded-[1.75rem] border border-marketing-line bg-marketing-white">
-      <div className="grid grid-cols-[1.4fr_0.8fr_0.8fr] border-b border-marketing-line bg-marketing-cream px-4 py-4 text-xs font-black uppercase tracking-[0.12em] text-marketing-slate sm:px-6">
-        <span>Workflow</span><span className="text-center">Starter</span><span className="text-center">Pro</span>
-      </div>
-      {comparisonRows.map((row) => (
-        <div key={row.label} className="grid grid-cols-[1.4fr_0.8fr_0.8fr] items-center border-b border-marketing-line px-4 py-4 text-sm last:border-b-0 sm:px-6">
-          <p className="font-extrabold text-marketing-ink">{row.label}</p>
-          {[row.starter, row.pro].map((value, index) => (
-            <p key={`${row.label}-${index}`} className="flex justify-center text-center">
-              {value ? <span className="inline-flex items-center gap-1.5 font-bold text-marketing-green"><Check aria-hidden="true" className="size-4" />{value}</span> : <span className="inline-flex items-center gap-1 text-marketing-slate"><Minus aria-hidden="true" className="size-4" />Not included</span>}
-            </p>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
+  return <div className="overflow-x-auto rounded-xl border border-marketing-line bg-marketing-white"><table className="w-full min-w-[360px] text-left text-sm"><caption className="sr-only">Starter and Pro workflow comparison</caption><thead className="border-b border-marketing-line bg-marketing-cream text-xs text-marketing-slate"><tr><th scope="col" className="px-4 py-4 sm:px-6">Workflow</th><th scope="col" className="px-3 py-4 text-center">Starter</th><th scope="col" className="px-3 py-4 text-center">Pro</th></tr></thead><tbody>{comparisonRows.map(row => <tr key={row.label} className="border-b border-marketing-line last:border-b-0"><th scope="row" className="px-4 py-4 font-semibold sm:px-6">{row.label}</th>{[row.starter, row.pro].map((value, index) => <td key={index} className="px-3 py-4 text-center">{value ? <span className="inline-flex items-center gap-1.5 font-medium text-marketing-green"><Check aria-hidden="true" className="size-4" />{value}</span> : <span className="inline-flex items-center gap-1 text-marketing-slate"><Minus aria-hidden="true" className="size-4" />Not included</span>}</td>)}</tr>)}</tbody></table></div>;
 }

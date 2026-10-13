@@ -1,4 +1,6 @@
 export const RATE_LIMITS = Object.freeze({
+  profile_update: { limit: 6, windowSeconds: 10 * 60 },
+  export_deals: { limit: 6, windowSeconds: 10 * 60 },
   billing_mutation: { limit: 6, windowSeconds: 10 * 60 },
   analyze_single: { limit: 8, windowSeconds: 10 * 60 },
   analyze_deep: { limit: 4, windowSeconds: 15 * 60 },

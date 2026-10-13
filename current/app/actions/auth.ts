@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { primaryOrganizationIdForUser } from "@/lib/auth/organization-id";
 import { getActiveOrganization, getVerifiedIdentity } from "@/lib/auth/server";
 import {
+  friendlyLoginError,
   friendlySignupError,
   getSafeNextPath,
   hasFieldErrors,
@@ -93,7 +94,7 @@ export async function loginAction(
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { formError: "Invalid email or password." };
+  if (error) return { formError: friendlyLoginError(error) };
 
   const identity = await getVerifiedIdentity(supabase);
   if (!identity) {
@@ -261,6 +262,7 @@ export async function onboardingAction(
 
 export async function logoutAction(): Promise<void> {
   const supabase = await createClient();
-  await supabase.auth.signOut({ scope: "local" });
+  const { error } = await supabase.auth.signOut({ scope: "local" });
+  if (error) throw new Error("Sign out could not be completed. Please try again.");
   redirect("/login");
 }

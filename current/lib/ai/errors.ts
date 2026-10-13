@@ -83,6 +83,11 @@ export function toDealAnalysisError(error: unknown): DealAnalysisError {
     const code = typeof candidate.code === "string" ? candidate.code.toLowerCase() : "";
     const name = typeof candidate.name === "string" ? candidate.name.toLowerCase() : "";
 
+    // Exhausted provider budgets are HTTP 429 too, but an immediate retry cannot
+    // restore funding. Keep their details private and preserve transient retries.
+    if (["insufficient_quota", "organization_spend_limit_exceeded", "project_spend_limit_exceeded"].includes(code)) {
+      return new DealAnalysisError("ANALYSIS_FAILED", false, "provider_unavailable");
+    }
     if (status === 429) return new DealAnalysisError("AI_RATE_LIMITED", true, "provider_unavailable");
     if (status !== null && status >= 500) return new DealAnalysisError("AI_TEMPORARILY_UNAVAILABLE", true, "provider_unavailable");
     if (name.includes("timeout") || name.includes("connection") || code.includes("timeout")) {

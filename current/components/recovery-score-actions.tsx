@@ -73,7 +73,7 @@ export function RecoveryScoreActions({
           {confirming === "unscored" ? `Calculate Recovery Scores for ${count} unscored ${count === 1 ? "deal" : "deals"}?` : `Refresh Recovery Scores for ${count} analyzed ${count === 1 ? "deal" : "deals"}?`}
         </p>
         <p className="mt-1 text-xs leading-5 text-success-content">This recalculates deterministic scores using current deal age. It does not use AI credits. No AI usage.</p>
-        <p className="mt-1 text-[11px] text-success-content">Records are processed in controlled batches of {batchLimit}.</p>
+        <p className="mt-1 text-[13px] text-success-content">Records are processed in controlled batches of {batchLimit}.</p>
         <div className="mt-3 flex gap-2">
           <button type="button" disabled={loading} onClick={() => setConfirming(null)} className={buttonStyles("outline", "h-9 px-3")}>Cancel</button>
           <button type="button" disabled={loading} onClick={() => run(confirming)} className={buttonStyles("primary", "h-9 px-3")}>

@@ -44,7 +44,7 @@ test("all applied migrations remain immutable and Prompt 15.3.7 adds no migratio
     .filter((file) => file.endsWith(".sql"))
     .sort();
 
-  assert.deepEqual(migrations, [...Object.keys(hashes), "20260916095842_prompt16_paddle_billing_foundation.sql"]);
+  assert.deepEqual(migrations, [...Object.keys(hashes), "20260916095842_prompt16_paddle_billing_foundation.sql", "20260917144440_prompt16_authority_dual_verifier.sql", "20260921064300_prompt16_paddle_simulator_event_id_compat.sql", "20260921073247_prompt16_authority_rotation_finalize.sql", "20260922083319_prompt16_billing_operation_rejection_recovery.sql", "20261005185926_prompt17a_atomic_operations_and_authorization.sql"]);
   assert.equal(migrations.some((file) => file.includes("prompt15_3_7")), false);
   for (const [file, expected] of Object.entries(hashes)) {
     const actual = createHash("sha256")
@@ -200,7 +200,9 @@ test("operator documentation closes Prompt 15.3.x while keeping commercial launc
   assert.match(security, /semver-major Vinext beta/i);
   assert.match(gaps, /Deep Recovery Analysis \| DONE/);
   assert.match(gaps, /Prompt 15\.3\.x Analysis QA \| DONE/);
-  assert.match(gaps, /Build-tool dependency review \| PENDING/);
-  assert.match(gaps, /Paddle sandbox QA \| PENDING/);
+  assert.match(gaps, /Build-tool dependency review \| DONE with scoped exception/);
+  assert.match(gaps, /eight HIGH dependency nodes solely from braces advisory GHSA-vfj7-8cjw-p6xm on the two approved dev\/build paths/);
+  assert.match(gaps, /exception expires 2026-11-04 or immediately when a patched release appears/);
+  assert.match(gaps, /Paddle sandbox QA \| DONE \(sandbox\)/);
   assert.match(gaps, /not commercially launch-ready/i);
 });

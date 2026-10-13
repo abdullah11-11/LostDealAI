@@ -65,7 +65,7 @@ export default async function DealPage({
 
   const rawFrom = typeof query.from === "string" ? query.from : null;
   const safeFrom = getSafeNextPath(rawFrom);
-  const backHref = safeFrom === "/deals" || safeFrom.startsWith("/deals?") ? safeFrom : "/deals";
+  const backHref = safeFrom === "/deals" || safeFrom.startsWith("/deals?") || safeFrom === "/recovery" || safeFrom.startsWith("/recovery?") ? safeFrom : "/deals";
 
   if (result.error || !result.deal) return <DealLoadError dealId={decodedId} backHref={backHref} />;
 
@@ -87,7 +87,7 @@ export default async function DealPage({
   });
 
   return (
-    <main className="mx-auto max-w-7xl">
+    <div className="mx-auto max-w-7xl">
       <DealHeader deal={deal} backHref={backHref} />
 
       {analysis ? (
@@ -112,7 +112,7 @@ export default async function DealPage({
           </details>
         </div>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -126,8 +126,8 @@ function UsageFinalizationNotice({ deal }: { deal: DealDetail }) {
           Its usage record still needs an idempotent reconciliation; this action will not run the AI provider again.
         </p>
         {deep
-          ? <DeepAnalysisButton dealId={deal.id} label="Finalize usage record" primary={false} />
-          : <AnalyzeDealButton dealId={deal.id} retry label="Finalize usage record" primary={false} />}
+          ? <DeepAnalysisButton dealId={deal.id} savedResultOnly label="Finalize usage record" primary={false} />
+          : <AnalyzeDealButton dealId={deal.id} savedResultOnly retry label="Finalize usage record" primary={false} />}
       </div>
     </aside>
   );
@@ -135,9 +135,9 @@ function UsageFinalizationNotice({ deal }: { deal: DealDetail }) {
 
 function DealLoadError({ dealId, backHref }: { dealId: string; backHref: string }) {
   return (
-    <main className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       <Link href={backHref} className="inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:text-content">
-        <ArrowLeft aria-hidden="true" className="size-4" /> Back to Deals
+        <ArrowLeft aria-hidden="true" className="size-4" /> {backHref.startsWith("/recovery") ? "Back to Recovery Queue" : "Back to Deals"}
       </Link>
       <div role="alert" className="mt-8 rounded-2xl border border-red-500/35 bg-panel p-8 text-center shadow-sm">
         <AlertCircle aria-hidden="true" className="mx-auto size-9 text-danger-content" />
@@ -145,7 +145,7 @@ function DealLoadError({ dealId, backHref }: { dealId: string; backHref: string 
         <p className="mt-2 text-sm leading-6 text-secondary">Your data has not changed. Try again shortly.</p>
         <Link href={`/deals/${dealId}?from=${encodeURIComponent(backHref)}`} className={buttonStyles("outline", "mt-6")}>Try again</Link>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -155,7 +155,7 @@ function DealHeader({ deal, backHref }: { deal: DealDetail; backHref: string }) 
     <>
       <nav aria-label="Deal navigation" className="flex flex-wrap items-center justify-between gap-3">
         <Link href={backHref} className="inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-semibold text-secondary hover:text-content focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25">
-          <ArrowLeft aria-hidden="true" className="size-4" /> Back to Deals
+          <ArrowLeft aria-hidden="true" className="size-4" /> {backHref.startsWith("/recovery") ? "Back to Recovery Queue" : "Back to Deals"}
         </Link>
         <Link href="/dashboard" className="inline-flex min-h-10 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-secondary hover:bg-panel-hover hover:text-content focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25">
           <LayoutDashboard aria-hidden="true" className="size-4" /> View Overview
@@ -191,9 +191,9 @@ function DealHeader({ deal, backHref }: { deal: DealDetail; backHref: string }) 
 function HeaderMetric({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel-raised px-4 py-3">
-      <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-secondary">{label}</p>
+      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-secondary">{label}</p>
       <p className="mt-1 text-xl font-semibold tracking-tight text-content">{value}</p>
-      <p className="mt-1 text-[11px] leading-5 text-secondary">{detail}</p>
+      <p className="mt-1 text-[13px] leading-5 text-secondary">{detail}</p>
     </div>
   );
 }
@@ -286,10 +286,11 @@ function DeepUpgradeCard({ deal, access }: { deal: DealDetail; access: AnalysisA
               {setupPending
                 ? "Deep Analysis setup is pending."
                 : access.state === "LOCKED"
-                  ? "Pro feature — available when Pro billing launches."
+                  ? "Deep Analysis is included with Pro."
                   : "Deep Analysis will activate with verified Pro billing."}
             </p>
-            <p className="mt-2 text-xs leading-5 text-secondary">Your current Standard Analysis remains fully available and unobstructed. No checkout or automatic AI call occurs here.</p>
+            <p className="mt-2 text-sm leading-6 text-secondary">Your saved Standard Analysis remains available. Review Pro for deeper strategic analysis; viewing this page never starts AI work.</p>
+            {access.state === "LOCKED" && <a href="/account?plan=PRO" className={buttonStyles("outline", "mt-4")}>Explore Pro</a>}
           </div>
         )}
       </div>
@@ -360,9 +361,9 @@ function DeepRecoverySummary({ deal, analysis }: { deal: DealDetail; analysis: D
     >
       <div className="grid gap-px bg-line lg:grid-cols-[1.25fr_1fr]">
         <div className="bg-panel p-5 sm:p-6">
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">Primary Blocker · {humanizeDealEnum(deep.primary_blocker.reason)}</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">Primary Blocker · {humanizeDealEnum(deep.primary_blocker.reason)}</p>
           <p className="mt-3 text-base font-bold leading-7 text-content">{deep.primary_blocker.explanation}</p>
-          <p className="mt-5 text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">Recovery Thesis</p>
+          <p className="mt-5 text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">Recovery Thesis</p>
           <p className="mt-2 text-sm leading-7 text-secondary">{deep.recovery_thesis.explanation}</p>
         </div>
         <dl className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -410,7 +411,7 @@ function DeepFollowUp({ analysis }: { analysis: DealAnalysisDetail }) {
         </div>
         <DeepTextField label="Avoid" value={strategy.key_point_to_avoid} />
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">Recommended Sequence</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">Recommended Sequence</p>
           <ol className="mt-2 space-y-2 text-sm leading-6 text-secondary">
             {strategy.recommended_sequence.map((step, index) => <li key={`${step}-${index}`}><strong className="mr-2 text-content">{index + 1}.</strong>{step}</li>)}
           </ol>
@@ -469,7 +470,7 @@ function DeepDecisionDynamics({ analysis }: { analysis: DealAnalysisDetail }) {
 function DeepTextField({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel-raised p-4">
-      <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</p>
+      <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</p>
       <p className="mt-2 text-sm font-semibold leading-6 text-content">{value}</p>
     </div>
   );
@@ -488,7 +489,7 @@ function DeepRankedItem({ rank, label, value, indices }: { rank: number; label: 
 function DeepInterpretation({ label, value, indices, className = "" }: { label: string; value: string; indices: number[]; className?: string }) {
   return (
     <div className={`bg-panel p-5 sm:p-6 ${className}`}>
-      <p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</p>
+      <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</p>
       <p className="mt-3 text-sm leading-7 text-content">{value}</p>
       <EvidenceReferences indices={indices} />
     </div>
@@ -534,7 +535,7 @@ function RecoverySummary({ analysis }: { analysis: DealAnalysisDetail }) {
 function SummaryMetric({ label, value, detail, warning = false }: { label: string; value: string; detail: string; warning?: boolean }) {
   return (
     <div className="bg-panel p-4">
-      <dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</dt>
+      <dt className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</dt>
       <dd className="mt-2 break-words text-lg font-bold leading-6 text-content">{value}</dd>
       <dd className={`mt-2 text-xs leading-5 ${warning ? "font-semibold text-warning-content" : "text-secondary"}`}>{detail}</dd>
     </div>
@@ -566,7 +567,7 @@ function RecommendedNextAction({ analysis, noAction }: { analysis: DealAnalysisD
 function ActionDetail({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel p-4">
-      <dt className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">{icon}{label}</dt>
+      <dt className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">{icon}{label}</dt>
       <dd className="mt-2 text-sm font-bold text-content">{value}</dd>
     </div>
   );
@@ -642,12 +643,12 @@ function EvidenceSection({ deal, analysis }: { deal: DealDetail; analysis: DealA
         {analysis.evidence.length ? analysis.evidence.map((evidence, index) => {
           const grounded = evidenceIsGrounded(evidence.source, evidence.excerpt, deal.sales_notes, deal.transcript);
           return (
-            <figure key={`${evidence.source}-${index}`} className={`rounded-xl border p-4 ${grounded ? "border-emerald-500/35 bg-emerald-500/10" : "border-amber-500/35 bg-amber-500/10"}`}>
+            <figure key={`${evidence.source}-${index}`} className={`rounded-lg border bg-panel-raised p-4 ${grounded ? "border-line" : "border-amber-500/35"}`}>
               <figcaption className="flex flex-wrap items-center gap-2">
                 <Badge tone="neutral">{humanizeDealEnum(evidence.source)}</Badge>
                 <span className={`text-xs font-semibold ${grounded ? "text-success-content" : "text-warning-content"}`}>{grounded ? "Exact imported excerpt" : "Source match unavailable"}</span>
               </figcaption>
-              <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-content">{evidence.excerpt}</p>
+              <blockquote className="evidence-quote mt-3 whitespace-pre-wrap break-words text-base leading-7 text-content">{evidence.excerpt}</blockquote>
             </figure>
           );
         }) : (
@@ -733,7 +734,7 @@ function RecoveryScoreBreakdown({ deal }: { deal: DealDetail }) {
 function ScoreFactor({ label, value, detail }: { label: string; value: string; detail: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel p-4">
-      <dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</dt>
+      <dt className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</dt>
       <dd className="mt-2 text-sm font-bold text-content">{value}</dd>
       <dd className="mt-1 text-xs leading-5 text-secondary">{detail}</dd>
     </div>
@@ -843,7 +844,7 @@ function SourceSections({ deal }: { deal: DealDetail }) {
 function DataField({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-panel px-5 py-4 sm:px-6">
-      <dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</dt>
+      <dt className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</dt>
       <dd className="mt-2 break-words text-sm font-semibold text-content">{value}</dd>
     </div>
   );

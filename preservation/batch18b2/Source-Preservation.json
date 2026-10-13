@@ -1,0 +1,61 @@
+{
+  "checked_at": "2026-10-13T06:31:05.541789+00:00",
+  "pass": true,
+  "source_commit": "ec787022d5d9fa1d0866cce73834301bd94f046a",
+  "source_tree": "52e2703049ecdb8f582fa047087cc2e8eea18733",
+  "source_file_count": 391,
+  "source_content_manifest_sha256": "456c6d30cbc9cec9a69585860b1e80b108061fe382328e069bed115ff9c6f842",
+  "source_zip": {
+    "path": "lostdeal-ai-prompt18b-batch2-source.zip",
+    "bytes": 1344826,
+    "sha256": "f344c29de8c82271067de61c9fce37300a1937b55a6a450d23f2118827a90a69",
+    "tracked_source_files": 391,
+    "payload_files": 392,
+    "extra_files": [
+      "Prompt18B-Batch2-Source-Manifest.json"
+    ]
+  },
+  "manifest_file_sha256": "d6dd7100c1d74942540c2a6386adbff3179e76fec73cf31339184b6edec2e7aa",
+  "crc_pass": true,
+  "safe_paths_pass": true,
+  "case_collision_free": true,
+  "zip_modes_exact": true,
+  "extraction_bytes_sha256_and_git_blobs_exact": true,
+  "reconstructed_git_tree": "52e2703049ecdb8f582fa047087cc2e8eea18733",
+  "mode_scope": "Original100644/100755 preserved in ZIP Unix metadata and canonical reconstructed Git tree. Windows extracted bytes verified; NTFS executable behavior is not a POSIX chmod claim.",
+  "original_candidate_bundle": {
+    "path": "lostdeal-ai-prompt18b-batch2-history.bundle",
+    "bytes": 2726912,
+    "sha256": "0850d298c91015919cf1873a8a2f476c23e0614340d815f8b7980b3660b11ebf",
+    "standalone": true,
+    "restored_commit": "ec787022d5d9fa1d0866cce73834301bd94f046a",
+    "fsck_exit_code": 0,
+    "scope": "Complete candidate reachable source history; advertises only the final batch2 branch."
+  },
+  "complete_ref_history_bundle": {
+    "path": "lostdeal-ai-prompt18b-batch2-full-history.bundle",
+    "bytes": 2727027,
+    "sha256": "11313159dcbb46d5a0698054b718d1b6014862bd5c4c7d4a84573cffd6d7b2cb",
+    "standalone_no_prerequisites": true,
+    "restored_commit": "ec787022d5d9fa1d0866cce73834301bd94f046a",
+    "restored_tree": "52e2703049ecdb8f582fa047087cc2e8eea18733",
+    "complete_named_refs": {
+      "refs/heads/prompt18b-batch1": "ebd0b05c3e65a15aea8f3c9f72f15b40d9ddd533",
+      "refs/heads/prompt18b-batch2": "ec787022d5d9fa1d0866cce73834301bd94f046a"
+    },
+    "restored_commits": 60,
+    "reachable_objects": 1727,
+    "objects_identical_to_prior_scanned_candidate_bundle": true,
+    "verify_exit_code": 0,
+    "fsck_exit_code": 0
+  },
+  "source_git_unchanged": true,
+  "zip_unchanged_during_validation": true,
+  "original_bundle_unchanged": true,
+  "manifest_unchanged": true,
+  "excluded": "Untracked files, runtime env, node_modules, dist, tenant exports, logs and Git metadata omitted. .env.example is tracked blank configuration.",
+  "secret_scan_boundary": "Full-ref bundle restores the exact same1727objects as the authoritative previously scanned candidate bundle. Root must scan the newly sealed source ZIP/full-ref archive and include any final external secret-scan receipt.",
+  "first_packaging_attempt": "The source ZIP and extraction/tree passed. Initial helper correctly stopped when candidate bundle omitted the older batch1 ref. Existing outputs/bundle were preserved; this independent verifier adds a separate complete-ref bundle instead of overwriting.",
+  "temporary_restoration_directories": "independent-source-restoration and independent-source-restoration-v2 are verification scratch, not distributable checkpoint payloads.",
+  "checker_sha256": "3cc22d908f2eccd3f155aacba850ef06c7aac40eecc3f6caa3d4ae076c0d22f0"
+}

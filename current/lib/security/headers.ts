@@ -22,12 +22,26 @@ export const BASE_SECURITY_HEADERS = Object.freeze({
 });
 
 export function isSensitivePath(pathname: string): boolean {
-  return pathname === "/dashboard"
+  return pathname === "/recovery"
+    || pathname.startsWith("/recovery/")
+    || pathname === "/insights"
+    || pathname.startsWith("/insights/")
+    || pathname === "/settings"
+    || pathname.startsWith("/settings/")
+    || pathname === "/dashboard"
     || pathname.startsWith("/dashboard/")
     || pathname === "/deals"
     || pathname.startsWith("/deals/")
     || pathname === "/upload"
     || pathname.startsWith("/upload/")
+    || pathname === "/account"
+    || pathname.startsWith("/account/")
+    || pathname === "/login"
+    || pathname === "/signup"
+    || pathname === "/forgot-password"
+    || pathname === "/reset-password"
+    || pathname.startsWith("/auth/")
+    || pathname === "/onboarding"
     || pathname.startsWith("/api/");
 }
 
@@ -35,16 +49,21 @@ export function applySecurityHeaders<T extends Response>(
   response: T,
   pathname: string,
   protocol: string,
+  paddleEnvironment: string | undefined = process.env.PADDLE_ENVIRONMENT,
 ): T {
   for (const [name, value] of Object.entries(BASE_SECURITY_HEADERS)) {
     response.headers.set(name, value);
   }
   if (pathname === "/account") {
+    const live = paddleEnvironment === "live";
+    const buy = live ? "https://buy.paddle.com" : "https://sandbox-buy.paddle.com";
+    const api = live ? "https://api.paddle.com" : "https://sandbox-api.paddle.com";
+    const cdn = live ? "https://cdn.paddle.com" : "https://sandbox-cdn.paddle.com";
     response.headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY
       .replace("script-src 'self' 'unsafe-inline'", "script-src 'self' 'unsafe-inline' https://cdn.paddle.com")
-      .replace("connect-src 'self' https://*.supabase.co", "connect-src 'self' https://*.supabase.co https://sandbox-buy.paddle.com https://sandbox-api.paddle.com")
-       .replace("style-src 'self' 'unsafe-inline'", "style-src 'self' 'unsafe-inline' https://sandbox-cdn.paddle.com")
-      + "; frame-src https://sandbox-buy.paddle.com https://sandbox-cdn.paddle.com");
+      .replace("connect-src 'self' https://*.supabase.co", `connect-src 'self' https://*.supabase.co ${buy} ${api}`)
+      .replace("style-src 'self' 'unsafe-inline'", `style-src 'self' 'unsafe-inline' ${cdn}`)
+      + `; frame-src ${buy} ${cdn}`);
     response.headers.set("Cache-Control", "private, no-store");
   }
   if (protocol === "https:") {

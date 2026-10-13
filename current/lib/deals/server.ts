@@ -18,6 +18,10 @@ export type DealAnalysisSummary = {
   recovery_score: number | null;
   recovery_priority: DealPriority | null;
   confidence_score: number;
+  buying_intent_score?: number | null;
+  recommended_action?: string | null;
+  recommended_timing?: string | null;
+  recommended_channel?: string | null;
 };
 
 export type DealEvidence = {
@@ -84,6 +88,7 @@ export type DealListData = {
 };
 
 const ANALYSIS_FIELDS = "lost_reason,recovery_score,recovery_priority,confidence_score";
+const LIST_ANALYSIS_FIELDS = `${ANALYSIS_FIELDS},buying_intent_score,recommended_action,recommended_timing,recommended_channel`;
 const LEGACY_DETAIL_ANALYSIS_FIELDS = `${ANALYSIS_FIELDS},lost_reason_detail,buying_intent_score,evidence,positive_signals,negative_signals,recommended_action,recommended_timing,recommended_channel,follow_up_message,score_explanation,model_metadata`;
 const DETAIL_ANALYSIS_FIELDS = `${LEGACY_DETAIL_ANALYSIS_FIELDS},analysis_mode,analysis_schema_version,deep_analysis,deep_analyzed_at`;
 const RUNTIME_DETAIL_ANALYSIS_FIELDS = `${DETAIL_ANALYSIS_FIELDS},analysis_usage_status`;
@@ -99,6 +104,10 @@ function normalizeAnalysis(value: unknown): DealAnalysisSummary | null {
     recovery_score: typeof row.recovery_score === "number" ? row.recovery_score : null,
     recovery_priority: typeof row.recovery_priority === "string" ? row.recovery_priority as DealPriority : null,
     confidence_score: row.confidence_score,
+    buying_intent_score: typeof row.buying_intent_score === "number" ? row.buying_intent_score : null,
+    recommended_action: typeof row.recommended_action === "string" ? row.recommended_action : null,
+    recommended_timing: typeof row.recommended_timing === "string" ? row.recommended_timing : null,
+    recommended_channel: typeof row.recommended_channel === "string" ? row.recommended_channel : null,
   };
 }
 
@@ -254,7 +263,7 @@ export async function getDealListData(
   const salespeople = distinctOptions((optionRows ?? []).map((row) => row.salesperson));
   const state = validateDynamicDealFilters(requestedState, services, salespeople);
   const hasAnalysisFilter = Boolean(state.priority || state.reason);
-  const selection = `${LIST_FIELDS},deal_analyses${hasAnalysisFilter ? "!inner" : ""}(${ANALYSIS_FIELDS})`;
+  const selection = `${LIST_FIELDS},deal_analyses${hasAnalysisFilter ? "!inner" : ""}(${LIST_ANALYSIS_FIELDS})`;
 
   let countQuery = supabase
     .from("deals")

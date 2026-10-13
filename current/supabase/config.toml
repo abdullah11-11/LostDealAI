@@ -1,3 +1,7 @@
 # Paddle authenticates this single callback using its signature, not a user JWT.
 [functions.paddle-webhook]
 verify_jwt = false
+
+# UNDEPLOYED preparation. Distinct Live signature and authority, never Sandbox.
+[functions.paddle-live-webhook]
+verify_jwt = false

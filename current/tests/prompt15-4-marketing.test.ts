@@ -50,7 +50,7 @@ test("Sandbox pricing preserves plan intent through authenticated account naviga
 });
 
 test("marketing navigation uses implemented routes and native accessible disclosure", () => {
-  assert.deepEqual(MARKETING_NAVIGATION.map(item => item.href), ["/product", "/#how-it-works", "/pricing", "/#trust"]);
+  assert.deepEqual(MARKETING_NAVIGATION.map(item => item.href), ["/product", "/#how-it-works", "/pricing", "/security"]);
   const header = source("components/marketing/marketing-header.tsx");
   for (const marker of ['href="/login"', 'aria-expanded={open}', 'aria-controls="marketing-mobile-navigation"', 'hidden={!open}', 'event.key === "Escape"', 'setOpen(false)']) assert.ok(header.includes(marker), marker);
   assert.ok(source("app/(auth)/login/page.tsx").includes("redirectAuthenticatedUser"));
@@ -67,14 +67,17 @@ test("marketing dependency boundary prevents provider execution and database mut
   for (const file of files) {
     const code = source(file);
     assert.doesNotMatch(code, /fetch\s*\(|\/api\/|createClient|supabase|lib\/ai|lib\/auth|lib\/billing\/(?:config|usage)|process\.env|use server|responses\.(?:create|parse)|\.insert\(|\.update\(/, file);
-    assert.doesNotMatch(code, /Paddle|Stripe|gpt-5|Terra|Luna|Sol\b|service_role|OPENAI_API_KEY/, file);
+    assert.doesNotMatch(code, /from ["'](?:@paddle|openai)|Stripe|gpt-5|Terra|Luna|Sol\b|service_role|OPENAI_API_KEY/, file);
   }
 });
 
-test("marketing examples are synthetic and contain no contact data or unsupported social proof", () => {
+test("marketing examples are synthetic and public contacts are limited to the approved business inboxes", () => {
   assert.ok(SYNTHETIC_DEALS.every(deal => deal.name.startsWith("Synthetic ")));
   const content = files.map(source).join("\n");
-  assert.doesNotMatch(content, /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|SOC 2|ISO 27001|HIPAA|Trusted by|customers served|revenue recovered|guaranteed revenue/i);
+  const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+  assert.doesNotMatch(JSON.stringify(SYNTHETIC_DEALS), emailPattern);
+  assert.deepEqual([...new Set(content.match(emailPattern) ?? [])].sort(), ["privacy@lostdeal.ai", "support@lostdeal.ai"]);
+  assert.doesNotMatch(content, /SOC 2|ISO 27001|HIPAA|Trusted by|customers served|revenue recovered|guaranteed revenue/i);
   assert.ok(content.includes('data-marketing-demo="static"'));
 });
 

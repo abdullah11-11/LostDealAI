@@ -10,7 +10,7 @@ export function marketingButtonStyles(
   className?: string,
 ) {
   return classes(
-    "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-extrabold transition-[transform,background-color,border-color,color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-orange focus-visible:ring-offset-2 active:translate-y-px",
+    "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-extrabold transition-[transform,background-color,border-color,color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marketing-orange focus-visible:ring-offset-2 active:translate-y-px",
     variant === "primary" && "border border-marketing-orange bg-marketing-orange text-marketing-ink hover:border-marketing-orange-dark hover:bg-marketing-orange-dark hover:text-white focus-visible:ring-offset-marketing-ivory",
     variant === "secondary" && "border border-marketing-line bg-marketing-white text-marketing-ink hover:border-marketing-ink hover:bg-marketing-cream focus-visible:ring-offset-marketing-ivory",
     variant === "dark" && "border border-white/20 bg-marketing-white/8 text-white hover:border-white/35 hover:bg-marketing-white/14 focus-visible:ring-offset-marketing-ink",
@@ -98,7 +98,7 @@ export function MarketingSection({
   className?: string;
 }) {
   return (
-    <section id={id} className={classes("scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24 lg:px-10 lg:py-30", className)}>
+    <section id={id} className={classes("scroll-mt-24 px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24", className)}>
       <div className="mx-auto max-w-7xl">{children}</div>
     </section>
   );

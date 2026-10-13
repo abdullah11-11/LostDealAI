@@ -16,7 +16,7 @@ export const DASHBOARD_QUERY_PAGE_SIZE = 1_000;
 export const TOP_OPPORTUNITY_LIMIT = 5;
 export const RECENT_IMPORT_LIMIT = 5;
 
-export const DASHBOARD_ANALYSIS_FIELDS = "id,lost_reason,recovery_score,recovery_priority,recommended_action,model_metadata";
+export const DASHBOARD_ANALYSIS_FIELDS = "id,lost_reason,recovery_score,recovery_priority,recommended_action,scoring_calculated_at:model_metadata->scoring->>calculated_at";
 export const DASHBOARD_DEAL_FIELDS = `id,organization_id,customer_name,deal_value,quote_date,service_type,analysis_status,created_at,deal_analyses(${DASHBOARD_ANALYSIS_FIELDS})`;
 
 function safeDatabaseCode(error: unknown): string {
@@ -110,4 +110,13 @@ export async function getDashboardData(
     TOP_OPPORTUNITY_LIMIT,
     RECENT_IMPORT_LIMIT,
   );
+}
+
+/** Insights needs saved deal metrics, not the Overview import activity query. */
+export async function getInsightsData(supabase: ServerSupabaseClient, organizationId: string): Promise<DashboardData> {
+  return loadDashboardData(organizationId, {
+    fetchDeals: () => fetchAllDashboardDeals(supabase, organizationId),
+    fetchRecentImports: async () => [],
+    reportDiagnostic: reportDashboardDiagnostic,
+  }, TOP_OPPORTUNITY_LIMIT, RECENT_IMPORT_LIMIT);
 }

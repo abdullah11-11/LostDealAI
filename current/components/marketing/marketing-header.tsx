@@ -2,7 +2,7 @@
 
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { MARKETING_NAVIGATION } from "@/lib/marketing/content";
@@ -10,14 +10,18 @@ import { marketingButtonStyles } from "@/components/marketing/marketing-primitiv
 
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
+  const navigationToggle = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        navigationToggle.current?.focus();
+      }
     }
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, []);
+  }, [open]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-marketing-line/80 bg-marketing-ivory/94 backdrop-blur-md">
@@ -49,6 +53,7 @@ export function MarketingHeader() {
         </div>
 
         <button
+          ref={navigationToggle}
           type="button"
           aria-label={open ? "Close navigation" : "Open navigation"}
           aria-expanded={open}

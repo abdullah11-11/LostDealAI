@@ -19,8 +19,11 @@ import {
   normalizeStoredAnalysisUsage,
   persistAuthorizedAnalysis,
   transitionAuthorizedAnalysis,
+  claimAnalysisRun,
+  recoverAnalysisRun,
+  failAnalysisRun,
 } from "@/lib/ai/analysis-persistence";
-import { reserveOrganizationUsage } from "@/lib/billing/usage";
+import { reserveOrganizationUsage, releaseUnusedUsage, type UsageReservation } from "@/lib/billing/usage";
 import { scoreAuthorizedDeal } from "@/lib/scoring/score-service";
 import { createClient } from "@/lib/supabase/server";
 import type { SourceDealRow } from "@/lib/ai/analysis-workflow";
@@ -96,6 +99,8 @@ export function createSupabaseDeepAnalysisStore(
   supabase: ServerSupabaseClient,
   organizationId: string,
 ): DeepAnalysisStore {
+  const claims = new Map<string, string>();
+  const reservations = new Map<string, UsageReservation>();
   return {
     async fetch(dealId) {
       const { data, error } = await supabase
@@ -141,6 +146,8 @@ export function createSupabaseDeepAnalysisStore(
         `deep-analysis:${dealId}:${operationId}`,
       );
       const usageKey = `deep-analysis:${dealId}:${operationId}`;
+      if (reservation.isNew) reservations.set(dealId, reservation);
+      if (!reservation.allowed) await releaseUnusedUsage(supabase, organizationId, reservation);
       const reservable = reservation.mode === "OFF"
         || !reservation.isNew
         || (reservation.available && Boolean(reservation.reservationToken));
@@ -158,27 +165,30 @@ export function createSupabaseDeepAnalysisStore(
     },
 
     async claim(dealId) {
-      return transitionAuthorizedAnalysis(
-        supabase,
-        organizationId,
-        dealId,
-        "CLAIM_DEEP",
-      );
+      const token = crypto.randomUUID();
+      try {
+        const claimed = await claimAnalysisRun(supabase, organizationId, dealId, "DEEP", token);
+        if (claimed) claims.set(dealId, token);
+        else if (reservations.has(dealId)) await releaseUnusedUsage(supabase, organizationId, reservations.get(dealId)!);
+        return claimed;
+      } catch {
+        await failAnalysisRun(supabase, organizationId, dealId, token, "DEEP", "ANALYSIS_FAILED", null).catch(() => false);
+        if (reservations.has(dealId)) await releaseUnusedUsage(supabase, organizationId, reservations.get(dealId)!);
+        throw new DealAnalysisError("ANALYSIS_FAILED");
+      }
     },
+    async recoverInterrupted(dealId) { return recoverAnalysisRun(supabase, organizationId, dealId); },
 
     async persistAndComplete(dealId, persistence: DeepAnalysisPersistenceData) {
-      return persistAuthorizedAnalysis(supabase, organizationId, dealId, persistence);
+      return persistAuthorizedAnalysis(supabase, organizationId, dealId,
+        { ...persistence, model_metadata: { ...persistence.model_metadata, runtime_claim_id: claims.get(dealId) } });
     },
 
     async fail(dealId, code: AnalysisErrorCode, diagnostic) {
-      await transitionAuthorizedAnalysis(
-        supabase,
-        organizationId,
-        dealId,
-        "FAIL_DEEP",
-        code,
-        diagnostic,
-      );
+      const token = claims.get(dealId);
+      const failed = token && await failAnalysisRun(supabase, organizationId, dealId, token, "DEEP", code, diagnostic);
+      const reservation = reservations.get(dealId);
+      if (failed && reservation) await releaseUnusedUsage(supabase, organizationId, reservation);
     },
   };
 }

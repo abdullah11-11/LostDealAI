@@ -51,6 +51,34 @@ function authoritySecret(): string | null {
   return getBillingUsageAuthoritySecret();
 }
 
+export async function claimAnalysisRun(supabase: ServerSupabaseClient, organizationId: string, dealId: string, mode: "STANDARD" | "DEEP", token: string): Promise<boolean> {
+  const secret = authoritySecret();
+  if (!secret) return false;
+  const { data, error } = await supabase.rpc("claim_analysis_run", {
+    target_authority_secret: secret, target_organization_id: organizationId, target_deal_id: dealId,
+    target_mode: mode, target_claim_token: token,
+  });
+  return !error && data === true;
+}
+export async function recoverAnalysisRun(supabase: ServerSupabaseClient, organizationId: string, dealId: string): Promise<boolean> {
+  const secret = authoritySecret();
+  if (!secret) return false;
+  const { data, error } = await supabase.rpc("recover_analysis_run", {
+    target_authority_secret: secret, target_organization_id: organizationId, target_deal_id: dealId,
+  });
+  return !error && data === true;
+}
+export async function failAnalysisRun(supabase: ServerSupabaseClient, organizationId: string, dealId: string, token: string,
+  mode: "STANDARD" | "DEEP", code: AnalysisErrorCode, diagnostic: AnalysisDiagnosticCategory | null): Promise<boolean> {
+  const secret = authoritySecret();
+  if (!secret) return false;
+  const { data, error } = await supabase.rpc("fail_analysis_run", {
+    target_authority_secret: secret, target_organization_id: organizationId, target_deal_id: dealId,
+    target_claim_token: token, target_mode: mode, target_error_code: code, target_error_detail: diagnostic,
+  });
+  return !error && data === true;
+}
+
 export async function transitionAuthorizedAnalysis(
   supabase: ServerSupabaseClient,
   organizationId: string,

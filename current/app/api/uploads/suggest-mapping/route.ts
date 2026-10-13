@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { suggestCsvMapping } from "@/lib/csv/ai-mapping";
 import { runOpenAiMapping } from "@/lib/csv/ai-mapping-runner";
 import { AiMappingRequestSchema } from "@/lib/csv/ai-mapping-schema";
-import { commitOrganizationUsage, reserveOrganizationUsage } from "@/lib/billing/usage";
+import { releaseUnusedUsage, reserveOrganizationUsage, type UsageReservation } from "@/lib/billing/usage";
+import { fingerprint, readOperation, saveOperation } from "@/lib/csv/operation-service";
+import { CsvImportError } from "@/lib/csv/server";
 import { mutationIssueResponse, validateMutationRequest } from "@/lib/security/origin";
 import { enforceRateLimitOrRespond } from "@/lib/security/rate-limit";
 import { getAuthorizedRouteContext } from "@/lib/security/route-auth";
@@ -17,6 +19,7 @@ export async function POST(request: Request) {
   const limited = await enforceRateLimitOrRespond(identity.id, "upload_ai_mapping");
   if (limited) return limited;
 
+  let reservation: UsageReservation | null = null;
   try {
     const idempotencyKey = request.headers.get("idempotency-key");
     if (!idempotencyKey || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
@@ -32,7 +35,11 @@ export async function POST(request: Request) {
         { status: 400, headers: { "Cache-Control": "private, no-store" } },
       );
     }
-    const reservation = await reserveOrganizationUsage(
+    const operationKey = "mapping:" + idempotencyKey;
+    const hash = await fingerprint(null, parsed.data);
+    const saved = await readOperation(supabase, organization.id, operationKey, hash);
+    if (saved) return NextResponse.json(saved, { headers: { "Cache-Control": "private, no-store" } });
+    reservation = await reserveOrganizationUsage(
       supabase,
       organization.id,
       "AI_MAPPING_REQUESTS",
@@ -40,6 +47,7 @@ export async function POST(request: Request) {
       `mapping:${idempotencyKey}`,
     );
     if (!reservation.allowed) {
+      await releaseUnusedUsage(supabase, organization.id, reservation);
       return NextResponse.json(
         { error: "This workspace has reached its AI Smart Mapping allowance." },
         { status: 403, headers: { "Cache-Control": "private, no-store" } },
@@ -51,16 +59,18 @@ export async function POST(request: Request) {
         { status: 409, headers: { "Cache-Control": "private, no-store" } },
       );
     }
+    if (!reservation.available || !reservation.reservationToken) throw new CsvImportError("Usage metering is temporarily unavailable.", 503);
     const suggestions = await suggestCsvMapping(parsed.data, runOpenAiMapping);
-    await commitOrganizationUsage(supabase, organization.id, reservation, 1);
+    const result = await saveOperation(supabase, organization.id, operationKey, hash, "AI_MAPPING_REQUESTS", reservation, 1, { suggestions });
     return NextResponse.json(
-      { suggestions },
+      result,
       { headers: { "Cache-Control": "private, no-store" } },
     );
-  } catch {
+  } catch (error) {
+    if (reservation?.isNew) await releaseUnusedUsage(supabase, organization.id, reservation);
     return NextResponse.json(
-      { error: "AI suggestions are unavailable right now. You can continue mapping manually." },
-      { status: 503, headers: { "Cache-Control": "private, no-store" } },
+      { error: error instanceof CsvImportError ? error.message : "AI suggestions are unavailable right now. You can continue mapping manually." },
+      { status: error instanceof CsvImportError ? error.status : 503, headers: { "Cache-Control": "private, no-store" } },
     );
   }
 }

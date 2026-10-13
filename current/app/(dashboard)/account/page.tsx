@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { CalendarRange, ChartNoAxesColumnIncreasing, Layers3 } from "lucide-react";
 
-import { PageHeader } from "@/components/page-heading";
-import { Badge, Card } from "@/components/ui";
+import { SettingsFrame } from "@/components/settings-frame";
+import { Badge, Card, buttonStyles } from "@/components/ui";
 import { requireOrganization } from "@/lib/auth/server";
 import { getOrganizationUsageSnapshot, type UsageLine } from "@/lib/billing/usage";
 import { createClient } from "@/lib/supabase/server";
@@ -55,21 +55,14 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const snapshot = await getOrganizationUsageSnapshot(supabase, context.organization.id);
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <PageHeader
-        eyebrow="Account"
-        title="Plan & Usage"
-        description="Verify your workspace plan and the actions counted during the current usage period. Limits are always enforced by the server, never the browser."
-      />
-
-      <BillingControls intendedPlan={plan} />
+    <SettingsFrame title="Billing & plan" description="Your plan, recorded usage and billing controls. Know what is included before you make a change.">
       {!snapshot.available || !snapshot.plan ? (
         <Card className="mt-7 p-6 sm:p-8">
           <div role="status" className="flex items-start gap-4">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-panel-raised text-brand"><Layers3 aria-hidden="true" className="size-5" /></span>
             <div>
               <h2 className="text-base font-bold text-content">Plan and usage setup is pending</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-secondary">Your existing workspace access is unchanged. Usage details will appear here after the commercial database migration is applied.</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-secondary">Your existing workspace access is unchanged. We could not read your plan details right now. Refresh the page or try again shortly.</p>
             </div>
           </div>
         </Card>
@@ -84,7 +77,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   {snapshot.plan.priceLabel && <p className="mt-1 text-sm font-bold text-brand">{snapshot.plan.priceLabel}</p>}
                   <p className="mt-2 text-sm text-secondary">{context.organization.name}</p>
                 </div>
-                <Badge tone={snapshot.plan.planCode === "INTERNAL" ? "demo" : "completed"}>{snapshot.subscriptionStatus}</Badge>
+                <Badge tone={snapshot.plan.planCode === "INTERNAL" ? "demo" : snapshot.subscriptionStatus === "active" ? "completed" : snapshot.subscriptionStatus === "past_due" ? "failed" : "neutral"}>{snapshot.subscriptionStatus === "canceled" ? "Ended" : snapshot.subscriptionStatus?.replaceAll("_", " ")}</Badge>
               </div>
             </Card>
             <Card className="p-5 sm:p-6">
@@ -99,6 +92,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             </Card>
           </section>
 
+          <BillingControls intendedPlan={plan} />
           {snapshot.usage ? (
             <section aria-labelledby="usage-heading" className="mt-6">
               <div className="flex items-center gap-2">
@@ -116,8 +110,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                       <Badge tone="demo">Pro feature</Badge>
                     </div>
                     <p className="mt-2 text-2xl font-semibold tracking-tight text-content">Available with Pro</p>
-                    <p className="mt-1 text-xs text-secondary">Upgrade available when billing launches.</p>
-                    <p className="mt-4 text-xs leading-5 text-secondary">Automatically prepares supported messy CSV rows. Smart Mapping remains included.</p>
+                    <p className="mt-1 text-xs text-secondary">AI preparation for larger, inconsistent exports.</p>
+                    <p className="mt-4 text-xs leading-5 text-secondary">Automatically prepares supported messy CSV rows. Smart Mapping remains included.</p><a href="/account?plan=PRO" className={buttonStyles("outline", "mt-4")}>Explore Pro</a>
                   </article>
                 ) : (
                   <UsageCard label="AI Auto Convert" description="Counts rows submitted to provider-backed Auto Convert. Deterministic Smart Import does not count." line={snapshot.usage.AUTO_CONVERT_ROWS} />
@@ -135,11 +129,11 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
                   {snapshot.plan.planCode === "INTERNAL"
                     ? "Active for this Internal workspace. Each explicit Standard or Deep run uses one AI Analysis unit; usage is unlimited."
                     : snapshot.plan.planCode === "STARTER"
-                      ? "Standard Analysis remains included. Deep Analysis becomes available with Pro when verified billing launches."
+                      ? "Standard Analysis is included with Starter. Pro adds Deep Analysis when the plan is active and verified."
                       : snapshot.mode === "SHADOW"
-                        ? "Commercial Deep execution remains inactive until verified billing launches. No checkout is available yet."
+                        ? "Deep Analysis is not active for this plan in the current environment. Your saved analyses remain readable."
                         : snapshot.plan.planCode === "TRIAL"
-                          ? "The future Trial preview includes two Deep analyses total. Each also counts toward AI Analyses."
+                          ? "Trial Deep previews are available only when activated for this environment. Each preview also counts toward AI Analyses."
                           : "Included with Pro. Standard and Deep runs each use one AI Analysis unit."}
                 </p>
               </article>
@@ -152,10 +146,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           )}
 
           {snapshot.mode === "SHADOW" && (
-            <p className="mt-6 rounded-xl border border-line bg-panel-raised px-4 py-3 text-xs leading-5 text-secondary">Commercial limits are currently in monitored rollout. Provider-backed Auto Convert stays inactive for commercial plans until verified billing launches; existing core access remains unchanged.</p>
+            <p className="mt-6 rounded-xl border border-line bg-panel-raised px-4 py-3 text-xs leading-5 text-secondary">Some AI features require an active, verified commercial plan. Availability is checked again when you request an action.</p>
           )}
         </>
       )}
-    </div>
+    </SettingsFrame>
   );
 }

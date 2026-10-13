@@ -18,8 +18,11 @@ import {
   normalizeStoredAnalysisUsage,
   persistAuthorizedAnalysis,
   transitionAuthorizedAnalysis,
+  claimAnalysisRun,
+  recoverAnalysisRun,
+  failAnalysisRun,
 } from "@/lib/ai/analysis-persistence";
-import { reserveOrganizationUsage } from "@/lib/billing/usage";
+import { reserveOrganizationUsage, releaseUnusedUsage, type UsageReservation } from "@/lib/billing/usage";
 import { scoreAuthorizedDeal } from "@/lib/scoring/score-service";
 import { createClient } from "@/lib/supabase/server";
 
@@ -75,6 +78,8 @@ export function createSupabaseAnalysisStore(
   supabase: ServerSupabaseClient,
   organizationId: string,
 ): DealAnalysisStore {
+  const claims = new Map<string, string>();
+  const reservations = new Map<string, UsageReservation>();
   return {
     async fetch(dealId) {
       const { data, error } = await supabase
@@ -121,6 +126,8 @@ export function createSupabaseAnalysisStore(
         `analysis:${dealId}`,
       );
       const usageKey = `analysis:${dealId}`;
+      if (reservation.isNew) reservations.set(dealId, reservation);
+      if (!reservation.allowed) await releaseUnusedUsage(supabase, organizationId, reservation);
       const reservable = reservation.mode === "OFF"
         || !reservation.isNew
         || (reservation.available && Boolean(reservation.reservationToken));
@@ -138,27 +145,30 @@ export function createSupabaseAnalysisStore(
     },
 
     async claim(dealId) {
-      return transitionAuthorizedAnalysis(
-        supabase,
-        organizationId,
-        dealId,
-        "CLAIM_STANDARD",
-      );
+      const token = crypto.randomUUID();
+      try {
+        const claimed = await claimAnalysisRun(supabase, organizationId, dealId, "STANDARD", token);
+        if (claimed) claims.set(dealId, token);
+        else if (reservations.has(dealId)) await releaseUnusedUsage(supabase, organizationId, reservations.get(dealId)!);
+        return claimed;
+      } catch {
+        await failAnalysisRun(supabase, organizationId, dealId, token, "STANDARD", "ANALYSIS_FAILED", null).catch(() => false);
+        if (reservations.has(dealId)) await releaseUnusedUsage(supabase, organizationId, reservations.get(dealId)!);
+        throw new DealAnalysisError("ANALYSIS_FAILED");
+      }
     },
+    async recoverInterrupted(dealId) { return recoverAnalysisRun(supabase, organizationId, dealId); },
 
     async persistAndComplete(dealId, persistence) {
-      return persistAuthorizedAnalysis(supabase, organizationId, dealId, persistence);
+      return persistAuthorizedAnalysis(supabase, organizationId, dealId,
+        { ...persistence, model_metadata: { ...persistence.model_metadata, runtime_claim_id: claims.get(dealId) } });
     },
 
     async fail(dealId, code, diagnostic) {
-      await transitionAuthorizedAnalysis(
-        supabase,
-        organizationId,
-        dealId,
-        "FAIL_STANDARD",
-        code,
-        diagnostic,
-      );
+      const token = claims.get(dealId);
+      const failed = token && await failAnalysisRun(supabase, organizationId, dealId, token, "STANDARD", code, diagnostic);
+      const reservation = reservations.get(dealId);
+      if (failed && reservation) await releaseUnusedUsage(supabase, organizationId, reservation);
     },
 
     async countPending() {

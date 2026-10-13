@@ -1,30 +1,48 @@
 # LostDeal AI
 
-**AI-powered lost-deal recovery platform that identifies why deals were lost, scores recovery opportunities, and generates evidence-grounded next actions and follow-ups.**
+**AI-powered lost-deal intelligence and recovery prioritization for B2B sales teams.**
 
-This private repository is the canonical code and milestone archive for LostDeal AI.
+LostDeal AI helps teams understand why opportunities were lost, review evidence from sales records, prioritize potential recoveries, and prepare human-reviewed follow-ups.
 
-## Repository structure
+**Status:** Premium SaaS development complete · Commercial activation pending.
 
-- `current/` — browsable latest source snapshot, materialized from Prompt 16
-- `archives/` — full-project ZIP snapshot for each available milestone
-- `docs/ARCHIVE_INDEX.md` — historical archive coverage and recovery notes
-- `docs/SECURITY.md` — archive safety notes
-- `MANIFEST.csv` — hashes and metadata for the ZIPs stored in this repository
-- `SHA256SUMS.txt` — SHA-256 integrity hashes for repository ZIPs
-- `ORIGINAL_MANIFEST.csv` — metadata recorded from the original snapshot ZIPs
-- `ORIGINAL_SHA256SUMS.txt` — hashes of the original snapshot ZIP byte streams
+## Features
 
-## Archive coverage
+- **Smart Import:** CSV mapping, normalization, provenance and review.
+- **AI Auto Convert:** Assisted conversion of non-standard CRM exports.
+- **Deal Intelligence:** Standard and Deep analysis with grounded reasons, signals and recommended actions.
+- **Recovery Score:** Deterministic scoring, priority ranking and Recovery Queue.
+- **Insights:** Deal overview, recovery trends and analysis coverage.
+- **Account & Billing:** Organization-scoped access, usage controls, Starter/Pro plans and Paddle integration.
 
-Available snapshot content covers Prompt 1 through Prompt 16, including Prompt 3.5, 9.1, 13.1–13.3, 15.1–15.3, 15.3.1–15.3.6, and Prompt 16.
+## Technology
 
-Prompt 15.4 is documented by a recovery marker because the original Library record did not expose its raw contents to the archiving session.
+Next.js App Router · React · TypeScript · Tailwind CSS · Supabase PostgreSQL/Auth/RLS · OpenAI · Paddle · Cloudflare Workers/Vinext.
 
-## Archive integrity note
+## Repository
 
-The ZIPs under `archives/` were deterministically regenerated inside GitHub from the verified extracted contents of the original milestone ZIPs. Their contained project files match the verified source snapshots, while ZIP-container byte hashes can differ from the original downloads because ZIP metadata/compression encoding can differ. The original ZIP identities are retained in `ORIGINAL_MANIFEST.csv` and `ORIGINAL_SHA256SUMS.txt`.
+| Directory | Contents |
+| --- | --- |
+| [`current/`](current/) | Verified 391-file final application source |
+| [`docs/`](docs/) | Architecture, source status, setup and launch runbook |
+| [`portfolio/`](portfolio/) | Product case study, walkthrough and synthetic showcase |
+| [`history/`](history/) | Verified application Git history bundle |
+| [`archives/`](archives/) | Preserved development milestone snapshots |
 
-## Security
+## Engineering validation
 
-Runtime secrets are intentionally excluded. `.env.example` is retained as a configuration template. Keep this repository private while historical snapshots are stored here.
+The final development checkpoint (13 October 2026) recorded **947/947 TypeScript/PostgreSQL tests** and **9/9 Worker tests** passing, plus lint, typecheck, build, migration-integrity and secret-scan checks. The 16 existing database migrations are unchanged. These are recorded checkpoint results, not GitHub Actions checks.
+
+**Important:** The live Site remains **private, on Version 49**. The final development source in `current/` has **not been deployed to production**. Paddle Live, public onboarding, production email, operational acceptance and real payments remain pending.
+
+## Documentation
+
+- [Architecture](current/docs/ARCHITECTURE_CURRENT.md)
+- [Development setup and restore](current/docs/RESTORE_AND_SETUP.md)
+- [Commercial activation runbook](current/docs/COMMERCIAL_ACTIVATION_RUNBOOK.md)
+- [Verified source status](docs/CURRENT_SOURCE_STATUS.md)
+- [Product case study](portfolio/Product-Case-Study.md)
+
+---
+
+**Private proprietary repository.** Source, historic archives and customer-facing deployment are not public. The [portfolio showcase](portfolio/showcase/) uses fictional records and does not contact the live SaaS or payment providers.
