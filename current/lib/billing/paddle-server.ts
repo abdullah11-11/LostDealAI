@@ -1,11 +1,22 @@
 import "server-only";
 import { Paddle, Environment, LogLevel } from "@paddle/paddle-node-sdk";
-import { validatePaddleConfig } from "@/lib/billing/paddle-policy";
-export function paddleServer() {
-  validatePaddleConfig(process.env);
+import { resolvePaddleBoundary, type PaddleBoundary } from "@/lib/billing/paddle-policy";
+import { assertLiveProviderPrice } from "@/supabase/functions/_shared/paddle-live";
+export function paddleServer(boundary: PaddleBoundary = resolvePaddleBoundary(process.env)) {
   const key = process.env.PADDLE_API_KEY;
-  if (!key || !/^pdl_sdbx_apikey_[a-z0-9]{26}_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{3}$/.test(key)) throw new Error("BILLING_CONFIGURATION_REQUIRED");
-  return new Paddle(key, { environment: Environment.sandbox, logLevel: LogLevel.none });
+  if (!key || !new RegExp(`^pdl_${boundary.environment === "sandbox" ? "sdbx" : "live"}_apikey_[a-z0-9]{26}_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{3}$`).test(key)) throw new Error("BILLING_CONFIGURATION_REQUIRED");
+  return new Paddle(key, { environment: boundary.environment === "sandbox" ? Environment.sandbox : Environment.production, logLevel: LogLevel.none });
+}
+/** Read-only provider proof before Live checkout, plan change or reconciliation. */
+export async function verifyLiveProviderCatalog(paddle: Paddle, boundary: PaddleBoundary) {
+  if (boundary.environment !== "live") return;
+  await Promise.all((["STARTER", "PRO"] as const).map(async plan => {
+    const [price, product] = await Promise.all([
+      boundedPaddleCall(paddle.prices.get(boundary.prices[plan])),
+      boundedPaddleCall(paddle.products.get(boundary.catalog.products[plan])),
+    ]);
+    assertLiveProviderPrice(boundary.catalog, plan, price, product);
+  }));
 }
 // Never retry mutations. A timed-out operation stays locked until a verified
 // event or explicit reconciliation determines its outcome.

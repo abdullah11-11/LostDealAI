@@ -24,7 +24,7 @@ const buttonVariants: Record<ButtonVariant, string> = {
 
 export function buttonStyles(variant: ButtonVariant = "primary", className?: string) {
   return cn(
-    "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:border-line disabled:bg-panel-hover disabled:text-disabled disabled:opacity-80",
+    "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:border-line disabled:bg-panel-hover disabled:text-disabled disabled:opacity-80",
     buttonVariants[variant],
     className,
   );
@@ -83,7 +83,7 @@ const badgeTones: Record<BadgeTone, string> = {
 };
 
 export function Badge({ tone = "neutral", children, className }: { tone?: BadgeTone; children: ReactNode; className?: string }) {
-  return <span className={cn("inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.08em]", badgeTones[tone], className)}>{children}</span>;
+  return <span className={cn("inline-flex w-fit items-center rounded-md border px-2.5 py-1 text-xs font-semibold", badgeTones[tone], className)}>{children}</span>;
 }
 
 function FieldFrame({ id, label, description, error, children }: {
@@ -103,7 +103,7 @@ function FieldFrame({ id, label, description, error, children }: {
   );
 }
 
-const fieldStyles = "h-11 w-full rounded-lg border border-line-strong bg-panel px-3.5 text-sm text-content outline-none transition-colors placeholder:text-muted hover:border-brand/45 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:cursor-not-allowed disabled:border-line disabled:bg-panel-hover disabled:text-disabled";
+const fieldStyles = "h-11 w-full rounded-lg border border-line-strong bg-panel px-3.5 text-base text-content outline-none transition-colors placeholder:text-muted hover:border-brand/45 focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:cursor-not-allowed disabled:border-line disabled:bg-panel-hover disabled:text-disabled";
 
 export function Input({ id, label, description, error, className, ...props }: InputHTMLAttributes<HTMLInputElement> & { id: string; label: string; description?: string; error?: string }) {
   const helperId = description || error ? `${id}-help` : undefined;
@@ -123,8 +123,8 @@ export function Textarea({ id, label, description, error, className, ...props }:
 export function Table({ label, headers, children, className, ...props }: TableHTMLAttributes<HTMLTableElement> & { label: string; headers: string[]; children: ReactNode }) {
   return (
     <div className="overflow-x-auto">
-      <table className={cn("w-full min-w-[760px] text-left", className)} aria-label={label} {...props}>
-        <thead className="border-y border-line bg-panel-raised text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary"><tr>{headers.map((header) => <th key={header} scope="col" className="whitespace-nowrap px-5 py-3.5">{header}</th>)}</tr></thead>
+      <table className={cn("data-table w-full min-w-[680px] text-left text-sm", className)} aria-label={label} {...props}>
+        <thead className="border-y border-line bg-panel-raised text-xs font-semibold text-secondary"><tr>{headers.map((header) => <th key={header} scope="col" className="whitespace-nowrap px-5 py-3.5">{header}</th>)}</tr></thead>
         <tbody className="divide-y divide-line">{children}</tbody>
       </table>
     </div>
@@ -135,8 +135,8 @@ export function EmptyState({ icon, title, description, action }: { icon?: ReactN
   return (
     <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-dashed border-line-strong bg-panel-raised px-6 py-10 text-center">
       {icon && <div className="flex size-12 items-center justify-center rounded-xl border border-line bg-panel text-brand">{icon}</div>}
-      <h3 className="mt-4 text-sm font-bold text-content">{title}</h3>
-      <p className="mt-2 max-w-md text-sm leading-6 text-secondary">{description}</p>
+      <h3 className="mt-4 text-base font-semibold text-content">{title}</h3>
+      <p className="mt-2 max-w-md text-base leading-6 text-secondary">{description}</p>
       {action && <div className="mt-5">{action}</div>}
     </div>
   );

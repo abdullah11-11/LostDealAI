@@ -137,8 +137,8 @@ test("Paddle CSP exceptions apply only to billing page",()=>{
   const billing=applySecurityHeaders(new Response(),"/account","https:").headers.get("content-security-policy")!;
   assert.doesNotMatch(normal,/paddle/);assert.match(billing,/cdn.paddle.com/);assert.match(billing,/frame-ancestors 'none'/);
 });
-test("one forward migration, narrow public function, and no usage resets",()=>{
-  assert.deepEqual(readdirSync(new URL("../supabase/migrations",import.meta.url)).filter(f=>f.includes("prompt16")),["20260916095842_prompt16_paddle_billing_foundation.sql"]);
+test("narrow Prompt 16 forward migrations and no usage resets",()=>{
+  assert.deepEqual(readdirSync(new URL("../supabase/migrations",import.meta.url)).filter(f=>f.includes("prompt16")),["20260916095842_prompt16_paddle_billing_foundation.sql", "20260917144440_prompt16_authority_dual_verifier.sql", "20260921064300_prompt16_paddle_simulator_event_id_compat.sql", "20260921073247_prompt16_authority_rotation_finalize.sql", "20260922083319_prompt16_billing_operation_rejection_recovery.sql"]);
   const sql=source("supabase/migrations/20260916095842_prompt16_paddle_billing_foundation.sql");
   const sync=sql.slice(sql.indexOf("create function public.synchronize_paddle_subscription"),sql.indexOf("revoke all on function public.get_billing_subscription"));
   assert.doesNotMatch(sync,/organization_usage_events|trial_ends_at\s*=|current_period_start\s*=|current_period_end\s*=/);

@@ -48,7 +48,7 @@ test("Prompt 15.3.2 adds exactly one forward migration and preserves every appli
     "20260905083511_prompt15_3_2_usage_reservation_runtime_hotfix.sql",
     "20260906080228_prompt15_3_3_recovery_sort_rpc_auth_hotfix.sql",
     "20260908055554_prompt15_3_5_deep_semantic_diagnostic_hardening.sql",
-    "20260916095842_prompt16_paddle_billing_foundation.sql",
+    "20260916095842_prompt16_paddle_billing_foundation.sql", "20260917144440_prompt16_authority_dual_verifier.sql", "20260921064300_prompt16_paddle_simulator_event_id_compat.sql", "20260921073247_prompt16_authority_rotation_finalize.sql", "20260922083319_prompt16_billing_operation_rejection_recovery.sql", "20261005185926_prompt17a_atomic_operations_and_authorization.sql",
   ]);
   assert.equal(
     createHash("sha256").update(hotfixMigration).digest("hex"),

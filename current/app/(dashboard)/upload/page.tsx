@@ -38,9 +38,9 @@ export default async function UploadPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         eyebrow="Import"
-        title="Upload Lost Deals"
-        description="Map, validate, review, and securely import lost opportunities from CSV. Valid rows are stored for your workspace; invalid rows are never silently included."
-        action={<Badge tone="completed">CSV import active</Badge>}
+        title="Imports"
+        description="Bring your lost deals into focus. Map your CSV, review the results and confirm the rows you want to import."
+        action={<Badge tone="neutral">CSV supported</Badge>}
       />
       <div className="mt-8">
         <CsvImportWorkflow

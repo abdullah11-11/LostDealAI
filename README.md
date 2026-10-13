@@ -1,30 +1,39 @@
 # LostDeal AI
 
-**AI-powered lost-deal recovery platform that identifies why deals were lost, scores recovery opportunities, and generates evidence-grounded next actions and follow-ups.**
+**Premium B2B SaaS development complete; commercial activation pending.**
 
-This private repository is the canonical code and milestone archive for LostDeal AI.
+LostDeal AI turns authorized lost-deal CSV data into source-grounded sales intelligence, deterministic recovery priority and human-reviewed next actions. The genuine application includes Smart Import, AI Auto Convert, Standard and Deep Recovery Analysis, Deals, Recovery Queue, Overview, Insights, workspace settings and guarded billing/usage.
 
-## Repository structure
+## Exact source in this review branch
 
-- `current/` — browsable latest source snapshot, materialized from Prompt 16
-- `archives/` — full-project ZIP snapshot for each available milestone
-- `docs/ARCHIVE_INDEX.md` — historical archive coverage and recovery notes
-- `docs/SECURITY.md` — archive safety notes
-- `MANIFEST.csv` — hashes and metadata for the ZIPs stored in this repository
-- `SHA256SUMS.txt` — SHA-256 integrity hashes for repository ZIPs
-- `ORIGINAL_MANIFEST.csv` — metadata recorded from the original snapshot ZIPs
-- `ORIGINAL_SHA256SUMS.txt` — hashes of the original snapshot ZIP byte streams
+`current/` mirrors the verified Batch 2 candidate: application commit `ec787022d5d9fa1d0866cce73834301bd94f046a`, tree `52e2703049ecdb8f582fa047087cc2e8eea18733`,391 tracked files. The application commit differs from this preservation repository's commit because this repository also retains milestone archives and documentation.
 
-## Archive coverage
+Production remains owner-private Sites Version 49 at `d5db733f0253669dc9d25bad444a133f1d155927`, Paddle Sandbox/SHADOW. This branch is an unmerged preservation review, not a deployment. Default main retains the historical Prompt16 snapshot until a separately approved merge. Existing draft PR1 remains open and unchanged.
 
-Available snapshot content covers Prompt 1 through Prompt 16, including Prompt 3.5, 9.1, 13.1–13.3, 15.1–15.3, 15.3.1–15.3.6, and Prompt 16.
+## Verified development
 
-Prompt 15.4 is documented by a recovery marker because the original Library record did not expose its raw contents to the archiving session.
+947 TypeScript/PostgreSQL tests and9 rendered Worker tests pass, as do lint, typecheck, native build, source/artifact/history secret checks and all16 migration comparisons. Production dependencies have zero findings. The unchanged, narrowly bounded build/lint exception expires4 November 2026 00:00 UTC or sooner if a compatible patch appears. Live billing boundaries and payment-link initialization are verified in isolation; the forward SQL remains an unapplied review draft.
 
-## Archive integrity note
+## Read the current handoff
 
-The ZIPs under `archives/` were deterministically regenerated inside GitHub from the verified extracted contents of the original milestone ZIPs. Their contained project files match the verified source snapshots, while ZIP-container byte hashes can differ from the original downloads because ZIP metadata/compression encoding can differ. The original ZIP identities are retained in `ORIGINAL_MANIFEST.csv` and `ORIGINAL_SHA256SUMS.txt`.
+- [Current source and acceptance status](docs/CURRENT_SOURCE_STATUS.md)
+- [Current architecture](current/docs/ARCHITECTURE_CURRENT.md)
+- [Restore and setup](current/docs/RESTORE_AND_SETUP.md)
+- [Complete commercial activation runbook](current/docs/COMMERCIAL_ACTIVATION_RUNBOOK.md)
+- [Live engineering and adoption review](current/docs/live-activation/README.md)
+- [Product case study](portfolio/Product-Case-Study.md)
+- [Product workflow](portfolio/Product-Walkthrough.md)
+- [Technical presentation](portfolio/Technical-Architecture.md)
+- [Marketplace and recruiter copy](portfolio/Marketplace-and-Recruiter-Copy.md)
+- [Demo script](portfolio/Demo-Script.md)
+- [Reviewed local-only showcase](portfolio/showcase/index.html)
 
-## Security
+The portfolio companion has fictional, manually prepared analysis and scores computed offline by the genuine scorer. It does not replace the SaaS, execute live AI, expose account APIs or accept payments. It is not published. Marketplace submission or any public publication requires explicit owner approval. No customer/revenue outcome, testimonial, certification or unaided authorship is invented.
 
-Runtime secrets are intentionally excluded. `.env.example` is retained as a configuration template. Keep this repository private while historical snapshots are stored here.
+## Preservation
+
+Historical Git history, all30 stored milestone ZIPs, both original manifest sets and existing correct documentation are preserved. The actual stored ZIP bytes match `MANIFEST.csv` and `SHA256SUMS.txt`; the `ORIGINAL_*` sets retain alternate container identities. [Measured archive note](docs/ARCHIVE_VERIFICATION.md) explains the distinction without rewriting history.
+
+`history/` contains the complete accepted application source history bundle, separate from the historical repository lineage. Verification receipts record the exact source and artifact identities. Secret values, runtime environment files, customer records and raw private inspection caches are excluded.
+
+Domain/mail purchase, hosted Auth delivery/security/backup/alerts/currency controls, Paddle Live seller/catalog/signing/SQL adoption and genuine payment/lifecycle/payout acceptance, legal/tax/bank determination, beta value validation and production/public launch remain separate funded activation gates. Nothing here authorizes a merge, purchase, persistent SQL change, production rollout or public visibility change.

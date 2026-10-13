@@ -1,5 +1,7 @@
 "use client";
 
+import { useWorkspaceAccess } from "@/components/workspace-access";
+
 import Link from "next/link";
 import { useRef, useState } from "react";
 import {
@@ -31,6 +33,7 @@ import {
   type CanonicalField,
 } from "@/lib/csv/constants";
 import { createCanonicalCsv } from "@/lib/csv/export";
+import { clientOperation } from "@/lib/security/client-operation";
 import {
   createMappingPlan,
   ignoredSourceColumns,
@@ -264,6 +267,7 @@ export function CsvImportWorkflow({
   const [error, setError] = useState<string | null>(null);
   const [mappingError, setMappingError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { restricted } = useWorkspaceAccess();
   const [aiBusy, setAiBusy] = useState(false);
   const [autoConvertBusy, setAutoConvertBusy] = useState(false);
   const [autoConvertProgress, setAutoConvertProgress] = useState<string | null>(null);
@@ -453,7 +457,7 @@ export function CsvImportWorkflow({
   }
 
   async function requestAiSuggestions() {
-    if (!parsed || !recipe || aiBusy) return;
+    if (!parsed || !recipe || aiBusy || restricted) return;
     const candidates = ignoredSourceColumns(parsed.headers, recipe);
     if (!candidates.length) {
       setAiMessage("All source columns are already mapped or intentionally used. Manual edits remain available.");
@@ -463,24 +467,27 @@ export function CsvImportWorkflow({
     setAiMessage(null);
     setAiSuggestions([]);
     try {
+      const mappingInput = {
+        columns: profileSourceColumns(parsed, candidates),
+        current_mappings: CANONICAL_FIELDS.flatMap((field) => recipe[field]
+          ? [{ target: field, source_count: recipe[field]?.sources.length ?? 1 }]
+          : []),
+      };
+      const operation = await clientOperation("mapping", mappingInput);
       const response = await fetch("/api/uploads/suggest-mapping", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Idempotency-Key": crypto.randomUUID(),
+          "Idempotency-Key": operation.id,
         },
-        body: JSON.stringify({
-          columns: profileSourceColumns(parsed, candidates),
-          current_mappings: CANONICAL_FIELDS.flatMap((field) => recipe[field]
-            ? [{ target: field, source_count: recipe[field]?.sources.length ?? 1 }]
-            : []),
-        }),
+        body: JSON.stringify(mappingInput),
       });
       const body = await responseJson(response);
       if (!response.ok || !Array.isArray(body.suggestions)) {
         throw new Error(typeof body.error === "string" ? body.error : "AI suggestions are unavailable right now. You can continue mapping manually.");
       }
       setAiSuggestions(body.suggestions as AiMappingSuggestion[]);
+      operation.complete();
       setAiMessage("Suggestions are ready. Apply only the mappings that match your source data.");
     } catch (requestError) {
       setAiMessage(requestError instanceof Error ? requestError.message : "AI suggestions are unavailable right now. You can continue mapping manually.");
@@ -548,11 +555,12 @@ export function CsvImportWorkflow({
     try {
       const formData = new FormData();
       formData.append("file", sourceFile);
-      formData.append("operation_id", crypto.randomUUID());
       if (retryRows?.length && autoConvertResult) {
         formData.append("row_numbers", JSON.stringify(retryRows));
         formData.append("mapping_recipe", JSON.stringify(autoConvertResult.sourceRecipe));
       }
+      const operation = await clientOperation("auto-convert", formData);
+      formData.append("operation_id", operation.id);
       const response = await fetch("/api/uploads/auto-convert", { method: "POST", body: formData });
       const body = await responseJson(response);
       if (!response.ok || body.success !== true || !Array.isArray(body.rows) || !body.validation) {
@@ -633,7 +641,8 @@ export function CsvImportWorkflow({
       setAutoConvertResult(nextResult);
       setSkipConfirmed(false);
       setStage("review");
-      setAutoConvertMessage(nextResult.partial
+      operation.complete();
+      setAutoConvertMessage(typeof body.validationWarning === "string" ? body.validationWarning : nextResult.partial
         ? "Auto Convert prepared the completed batches. Unresolved rows are preserved for retry or review."
         : "Auto Convert prepared the file. Review only the uncertainty shown below before importing.");
     } catch (requestError) {
@@ -676,18 +685,20 @@ export function CsvImportWorkflow({
   }
 
   async function importDeals() {
-    if (!validation?.readyRows || busy || (skippedRows > 0 && !skipConfirmed)) return;
+    if (!validation?.readyRows || busy || restricted || (skippedRows > 0 && !skipConfirmed)) return;
     const formData = formDataForCurrentFile(true);
     if (!formData) return;
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch("/api/uploads/import", { method: "POST", body: formData });
+      const operation = await clientOperation("import", formData);
+      const response = await fetch("/api/uploads/import", { method: "POST", body: formData, headers: { "Idempotency-Key": operation.id } });
       const body = await responseJson(response);
       if (!response.ok || !body.success) {
         throw new Error(typeof body.error === "string" ? body.error : "The import could not be completed.");
       }
       const nextResult = body as unknown as ImportResult;
+      operation.complete();
       setResult(nextResult);
       setImports((current) => [{
         id: nextResult.uploadId,
@@ -753,8 +764,8 @@ export function CsvImportWorkflow({
                 <h2 className="mt-4 text-xl font-bold text-content">Upload your existing CSV</h2>
                 <p className="mt-2 max-w-lg text-sm leading-6 text-secondary">Smart Mapping matches common CRM and spreadsheet columns, while keeping every mapping reviewable.</p>
                 <p className="mt-3 max-w-lg text-xs leading-5 text-secondary">Import only information your organization is authorized to process. Avoid unnecessary sensitive personal data.</p>
-                <input ref={inputRef} id="csv-file" type="file" accept=".csv,text/csv" className="sr-only" onChange={(event) => void selectFile(event.target.files?.item(0) ?? null)} />
-                <label htmlFor="csv-file" className={buttonStyles("primary", "mt-5")}>Choose CSV</label>
+                <input ref={inputRef} id="csv-file" aria-label="Choose CSV file" tabIndex={-1} type="file" accept=".csv,text/csv" className="sr-only" onChange={(event) => void selectFile(event.target.files?.item(0) ?? null)} />
+                <Button type="button" className="mt-5" onClick={() => inputRef.current?.click()}>Choose CSV</Button>
                 <div className="mt-4 flex flex-wrap justify-center gap-2"><Badge tone="neutral">CSV only</Badge><Badge tone="neutral">Maximum {MAX_CSV_FILE_BYTES / 1024 / 1024} MB</Badge><Badge tone="neutral">Maximum {MAX_CSV_ROWS.toLocaleString()} deals</Badge></div>
               </div>
             </div>
@@ -775,7 +786,7 @@ export function CsvImportWorkflow({
                     ["Messy CRM Example", "Smart Mapping example", "/examples/smart-import-crm-example.csv", "Messy"],
                   ].map(([title, detail, href, label]) => <div key={href} className="flex items-center justify-between gap-3 p-3"><div><h3 className="text-sm font-bold text-content">{title}</h3><p className="mt-0.5 text-xs text-secondary">{detail}</p></div><a href={href} download aria-label={`Download ${title}`} className={buttonStyles("outline", "min-h-9 shrink-0 px-3")}><Download aria-hidden="true" className="size-4" />{label}</a></div>)}
                 </div>
-                <p className="mt-4 border-t border-line pt-4 text-[11px] leading-5 text-secondary">Synthetic data only. Uploaded values stay plain text; formulas are never executed.</p>
+                <p className="mt-4 border-t border-line pt-4 text-[13px] leading-5 text-secondary">Synthetic data only. Uploaded values stay plain text; formulas are never executed.</p>
               </div>
             </Card>
           </aside>
@@ -808,7 +819,7 @@ export function CsvImportWorkflow({
           {isMessyFile && autoConvertAccess.state === "LOCKED" && (
             <Card className="border-brand/25 bg-brand/5">
               <div className="grid gap-4 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
-                <div><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold text-content">Auto Convert with AI</h2><Badge tone="demo">Pro feature</Badge></div><p className="mt-2 text-sm leading-6 text-secondary">Let LostDeal AI automatically map, clean and prepare this file.</p><p className="mt-2 text-xs text-secondary">Available with Pro. Upgrade available when billing launches.</p></div>
+                <div><div className="flex flex-wrap items-center gap-2"><h2 className="text-lg font-bold text-content">Auto Convert with AI</h2><Badge tone="demo">Available with Pro</Badge></div><p className="mt-2 text-sm leading-6 text-secondary">Let LostDeal AI automatically map, clean and prepare this file.</p><p className="mt-2 text-sm leading-6 text-secondary">Pro adds AI preparation for supported messy exports. You can continue with manual Smart Mapping.</p><a href="/account?plan=PRO" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-brand-content hover:underline">Explore Pro</a></div>
                 <Button type="button" variant="secondary" onClick={focusSmartMapping}>Continue with Smart Mapping</Button>
               </div>
             </Card>
@@ -832,7 +843,7 @@ export function CsvImportWorkflow({
                 const canMerge = MERGE_FIELDS.has(field) && Boolean(entry) && (entry?.sources.length ?? 0) < MAX_MAPPING_MERGE_COLUMNS;
                 return (
                   <article key={field} className="grid gap-4 px-5 py-5 md:grid-cols-[minmax(12rem,0.8fr)_minmax(18rem,1.4fr)_auto] md:items-start sm:px-6">
-                    <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-bold text-content">{FIELD_DETAILS[field].label}</h3>{FIELD_DETAILS[field].required ? <Badge tone="pending">Required</Badge> : <Badge tone="neutral">Optional</Badge>}</div><p className="mt-1 text-xs leading-5 text-secondary">{FIELD_DETAILS[field].description}</p>{(field === "sales_notes" || field === "transcript") && <p className="mt-1 text-[11px] font-semibold text-brand-strong">Sales Notes OR Transcript is required for analysis.</p>}</div>
+                    <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-bold text-content">{FIELD_DETAILS[field].label}</h3>{FIELD_DETAILS[field].required ? <Badge tone="pending">Required</Badge> : <Badge tone="neutral">Optional</Badge>}</div><p className="mt-1 text-xs leading-5 text-secondary">{FIELD_DETAILS[field].description}</p>{(field === "sales_notes" || field === "transcript") && <p className="mt-1 text-[13px] font-semibold text-brand-strong">Sales Notes OR Transcript is required for analysis.</p>}</div>
                     <div className="space-y-3">
                       {(entry?.sources ?? [null]).map((source, slot) => (
                         <div key={`${field}-${slot}`} className="flex items-end gap-2">
@@ -841,7 +852,7 @@ export function CsvImportWorkflow({
                         </div>
                       ))}
                       {canMerge && <div><label htmlFor={`add-source-${field}`} className="sr-only">Add another source column to {FIELD_DETAILS[field].label}</label><select id={`add-source-${field}`} value="" onChange={(event) => addMappedSource(field, event.target.value)} className="h-10 w-full rounded-lg border border-dashed border-line-strong bg-panel px-3 text-sm font-semibold text-secondary outline-none hover:border-brand/45 focus:border-brand focus:ring-2 focus:ring-brand/20"><option value="">+ Add another source column</option>{parsed.headers.map((header, index) => <option key={`${header}-add-${index}`} value={index}>{header || `Column ${index + 1}`}</option>)}</select></div>}
-                      {entry && entry.sources.length > 1 && <p className="text-[11px] leading-5 text-secondary">{field === "customer_name" ? "Names join with one space; blank parts stay blank." : "Text joins on new lines with source-column labels preserved."}</p>}
+                      {entry && entry.sources.length > 1 && <p className="text-[13px] leading-5 text-secondary">{field === "customer_name" ? "Names join with one space; blank parts stay blank." : "Text joins on new lines with source-column labels preserved."}</p>}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 md:justify-end"><Badge tone={mappingStateTone(mappingStates[field])}>{mappingStateLabel(mappingStates[field])}</Badge>{mappingStates[field] === "suggested" && <Button type="button" variant="outline" className="min-h-9 px-3" onClick={() => confirmSuggestion(field)}><Check aria-hidden="true" className="size-4" />Confirm</Button>}</div>
                   </article>
@@ -863,7 +874,7 @@ export function CsvImportWorkflow({
           </div>
 
           <Card title="Optional AI mapping help" description="Deterministic and manual mapping work without AI.">
-            <div className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-start sm:p-6"><div><p className="text-sm leading-6 text-secondary"><strong className="text-content">Provider notice:</strong> AI mapping may send column names and a small number of representative values to the configured AI provider. It never sends the full CSV, and every suggestion requires your review.</p><p className="mt-2 text-xs leading-5 text-secondary">At most 60 unmapped columns, three samples per column, and 120 characters per sample are included. No rows are imported by this action.</p></div><Button type="button" variant="secondary" loading={aiBusy} disabled={!ignored.length} onClick={() => void requestAiSuggestions()}><Sparkles aria-hidden="true" className="size-4" />Suggest Mapping with AI</Button></div>
+            <div className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-start sm:p-6"><div><p className="text-sm leading-6 text-secondary"><strong className="text-content">Provider notice:</strong> AI mapping may send column names and a small number of representative values to the configured AI provider. It never sends the full CSV, and every suggestion requires your review.</p><p className="mt-2 text-xs leading-5 text-secondary">At most 60 unmapped columns, three samples per column, and 120 characters per sample are included. No rows are imported by this action.</p></div><Button type="button" variant="secondary" loading={aiBusy} disabled={!ignored.length || restricted} title={restricted ? "An active plan is required for AI mapping." : undefined} onClick={() => void requestAiSuggestions()}><Sparkles aria-hidden="true" className="size-4" />Suggest Mapping with AI</Button></div>
             {(aiMessage || aiSuggestions.length > 0) && <div aria-live="polite" className="border-t border-line p-5 sm:p-6">{aiMessage && <p className="text-sm text-secondary">{aiMessage}</p>}{aiSuggestions.length > 0 && <div className="mt-4 max-h-80 space-y-2 overflow-y-auto pr-1">{aiSuggestions.map((suggestion) => <div key={suggestion.source_column} className="flex flex-col gap-3 rounded-xl border border-line bg-panel-raised p-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="text-sm font-bold text-content">{suggestion.source_column} <span className="text-secondary">→</span> {suggestion.target === "IGNORE" ? "Ignore" : FIELD_DETAILS[suggestion.target].label}</p><p className="mt-1 text-xs leading-5 text-secondary">{suggestion.reason}</p><Badge tone={suggestion.confidence === "HIGH" ? "completed" : suggestion.confidence === "MEDIUM" ? "pending" : "neutral"} className="mt-2">AI suggestion · {suggestion.confidence}</Badge></div><Button type="button" variant="outline" className="shrink-0" onClick={() => applyAiSuggestion(suggestion)}>{suggestion.target === "IGNORE" ? "Keep ignored" : "Apply suggestion"}</Button></div>)}</div>}</div>}
           </Card>
         </section>
@@ -882,7 +893,7 @@ export function CsvImportWorkflow({
                   ["Extracted fields", autoConvertResult.summary.extractedFields, "text-content"],
                   ["Normalized values", autoConvertResult.summary.normalizedValues, "text-content"],
                   ["Unresolved batches", autoConvertResult.retryableRowNumbers.length, "text-content"],
-                ].map(([label, value, color]) => <div key={String(label)} className="rounded-xl border border-line bg-panel-raised p-3"><p className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-secondary">{label}</p><p className={`mt-2 text-xl font-semibold ${color}`}>{Number(value).toLocaleString()}</p></div>)}
+                ].map(([label, value, color]) => <div key={String(label)} className="rounded-xl border border-line bg-panel-raised p-3"><p className="text-xs font-extrabold uppercase tracking-[0.08em] text-secondary">{label}</p><p className={`mt-2 text-xl font-semibold ${color}`}>{Number(value).toLocaleString()}</p></div>)}
               </div>
               <div className="border-t border-line px-5 py-4 sm:px-6">
                 <p aria-live="polite" className="text-sm leading-6 text-secondary">{autoConvertMessage}</p>
@@ -913,7 +924,7 @@ export function CsvImportWorkflow({
               ["Mapping issues", String(validation.issueGroups.mapping)],
               ["Duplicate issues", String(validation.issueGroups.duplicate)],
               ["Row/value issues", String(validation.issueGroups.row + validation.issueGroups.value)],
-            ].map(([label, value]) => <div key={label} className="rounded-xl border border-line bg-panel-raised p-3"><p className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</p><p className="mt-2 text-lg font-bold text-content">{value}</p></div>)}</div>
+            ].map(([label, value]) => <div key={label} className="rounded-xl border border-line bg-panel-raised p-3"><p className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">{label}</p><p className="mt-2 text-lg font-bold text-content">{value}</p></div>)}</div>
           </Card>
 
           {(validation.ambiguousDates.length > 0 || validation.unknownStatuses.length > 0) && <Card title="Resolve review items" description="Apply fixes to the selected file without uploading it again.">
@@ -942,10 +953,10 @@ export function CsvImportWorkflow({
 
       {stage === "import" && file && validation && (
         <section className="mt-5"><Card title="Confirm Import" description={`Review the final write into ${organizationName}.`} action={<Badge tone="pending">No AI analysis starts</Badge>}>
-          <div className="p-5 sm:p-6"><dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-xl border border-line bg-panel-raised p-4 sm:col-span-2"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">Filename</dt><dd className="mt-2 break-all text-sm font-bold text-content">{file.name}</dd></div><div className="rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-4"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-success-content">Rows importing</dt><dd className="mt-2 text-2xl font-semibold text-content">{validation.readyRows.toLocaleString()}</dd></div><div className="rounded-xl border border-line bg-panel-raised p-4"><dt className="text-[10px] font-extrabold uppercase tracking-[0.1em] text-secondary">Rows skipped</dt><dd className="mt-2 text-2xl font-semibold text-content">{skippedRows.toLocaleString()}</dd></div></dl>
+          <div className="p-5 sm:p-6"><dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-xl border border-line bg-panel-raised p-4 sm:col-span-2"><dt className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">Filename</dt><dd className="mt-2 break-all text-sm font-bold text-content">{file.name}</dd></div><div className="rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-4"><dt className="text-xs font-extrabold uppercase tracking-[0.1em] text-success-content">Rows importing</dt><dd className="mt-2 text-2xl font-semibold text-content">{validation.readyRows.toLocaleString()}</dd></div><div className="rounded-xl border border-line bg-panel-raised p-4"><dt className="text-xs font-extrabold uppercase tracking-[0.1em] text-secondary">Rows skipped</dt><dd className="mt-2 text-2xl font-semibold text-content">{skippedRows.toLocaleString()}</dd></div></dl>
             <div className="mt-5 rounded-xl border border-brand/25 bg-brand/5 p-4"><p className="text-sm font-bold text-content">{validation.mappedFields} of {CANONICAL_FIELDS.length} canonical fields mapped</p><p className="mt-1 text-xs leading-5 text-secondary">The server reparses and revalidates the original file. Existing external IDs remain protected, and analysis/scoring remain separate explicit actions.</p></div>
             {skippedRows > 0 && <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-amber-500/35 bg-amber-500/10 p-4 text-sm leading-6 text-content"><input type="checkbox" checked={skipConfirmed} onChange={(event) => setSkipConfirmed(event.target.checked)} className="mt-1 size-4 accent-[var(--color-brand)]" /><span><strong>I understand {skippedRows.toLocaleString()} {skippedRows === 1 ? "row is" : "rows are"} excluded.</strong><span className="mt-1 block text-xs text-secondary">Only Ready rows will be imported.</span></span></label>}
-            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="outline" disabled={busy} onClick={() => { setStage("review"); setError(null); }}><ArrowLeft aria-hidden="true" className="size-4" />Back to Review</Button><Button type="button" loading={busy} disabled={!validation.readyRows || (skippedRows > 0 && !skipConfirmed)} onClick={() => void importDeals()}><UploadCloud aria-hidden="true" className="size-4" />{busy ? "Importing…" : `Import ${validation.readyRows.toLocaleString()} ${validation.readyRows === 1 ? "Deal" : "Deals"}`}</Button></div>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><Button type="button" variant="outline" disabled={busy} onClick={() => { setStage("review"); setError(null); }}><ArrowLeft aria-hidden="true" className="size-4" />Back to Review</Button><Button type="button" loading={busy} disabled={!validation.readyRows || restricted || (skippedRows > 0 && !skipConfirmed)} title={restricted ? "An active plan is required to import deals." : undefined} onClick={() => void importDeals()}><UploadCloud aria-hidden="true" className="size-4" />{busy ? "Importing…" : `Import ${validation.readyRows.toLocaleString()} ${validation.readyRows === 1 ? "Deal" : "Deals"}`}</Button></div>
           </div>
         </Card></section>
       )}

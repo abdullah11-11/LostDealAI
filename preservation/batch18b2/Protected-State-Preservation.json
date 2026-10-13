@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-13 06:13:12 UTC",
+  "observedAt": "2026-10-13T06:10:46.216417+00:00",
+  "passed": true,
+  "completeProtectedTenantObjectsUnchanged": true,
+  "allSevenFingerprintsUnchanged": true,
+  "fingerprintNames": [
+    "analyses",
+    "deals",
+    "functions",
+    "policies",
+    "receipts",
+    "subscriptions",
+    "usage"
+  ],
+  "baselineReceiptSha256": "40c38ce1ca4b7ca6e2ee480dc75e55f08abfe451dd34559acbb89a4c4429868e",
+  "rawCustomerOrTenantRecordsIncluded": false,
+  "queryScope": "Exact accepted single read-only SELECT; raw original JSON timestamps compared without conversion or normalization. No business/config/privilege/provider/paid-AI writes."
+}

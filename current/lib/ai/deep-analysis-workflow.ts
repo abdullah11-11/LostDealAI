@@ -46,6 +46,7 @@ export type DeepAnalysisStore = {
   reserveUsage(dealId: string, operationId: string): Promise<AnalysisUsageReservation>;
   finalizeUsage(dealId: string, usageKey: string): Promise<boolean>;
   claim(dealId: string): Promise<boolean>;
+  recoverInterrupted?(dealId: string): Promise<boolean>;
   persistAndComplete(dealId: string, data: DeepAnalysisPersistenceData): Promise<boolean>;
   fail(dealId: string, code: AnalysisErrorCode, diagnostic: AnalysisDiagnosticCategory | null): Promise<void>;
 };
@@ -134,14 +135,16 @@ export async function analyzeDeepDealWithStore(
       return { status: "completed", fresh: false };
     }
   }
-  if (existing?.deepValid && !rerun) {
+  if (existing?.deepValid && (!rerun || existing.usageKey === "deep-analysis:" + dealId + ":" + operationId)) {
     if (deal.analysis_status !== "completed" && !await store.repairCompleted(dealId)) {
       return { status: "failed", code: "ANALYSIS_FAILED" };
     }
     if (!existing.scored) await store.scoreCompleted(dealId).catch(() => false);
     return { status: "completed", fresh: false };
   }
-  if (deal.analysis_status === "processing") return { status: "processing" };
+  if (deal.analysis_status === "processing") {
+    if (!store.recoverInterrupted || !await store.recoverInterrupted(dealId)) return { status: "processing" };
+  }
 
   let reservation: AnalysisUsageReservation;
   try {

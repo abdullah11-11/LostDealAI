@@ -29,11 +29,11 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-brand/25 bg-brand/10 text-brand"><Building2 aria-hidden="true" className="size-6" /></span>
           <p className="mt-5 text-xs font-bold tracking-[0.08em] text-brand">Workspace setup</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-content sm:text-4xl">Set up your LostDeal AI workspace</h1>
-          <p className="mt-3 text-sm leading-6 text-secondary">Add your business name and industry to create your organization workspace.</p>
+          <p className="mt-3 text-sm leading-6 text-secondary">A couple of details, then you can bring your first CSV.</p>
         </div>
         <section className="rounded-2xl border border-line bg-panel p-6 sm:p-8">
           <h2 className="text-xl font-bold text-content">Business details</h2>
-          <p className="mt-2 text-sm leading-6 text-secondary">Your organization keeps its lost-deal data separate from every other workspace.</p>
+          <p className="mt-2 text-sm leading-6 text-secondary">Your workspace keeps its deal history separate. You can finish your first recovery workflow at your own pace.</p>
           <OnboardingForm needsFullName={!context.profileFullName} nextPath={nextPath} />
         </section>
       </div>

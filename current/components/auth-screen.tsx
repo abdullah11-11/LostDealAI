@@ -14,7 +14,9 @@ const INITIAL_STATE: FormActionState = {};
 export function AuthScreen({ mode, nextPath, resetComplete = false }: { mode: "login" | "signup"; nextPath?: string; resetComplete?: boolean }) {
   const login = mode === "login";
   const action = login ? loginAction : signupAction;
-  const [state, formAction, pending] = useActionState(action, INITIAL_STATE);
+  const [actionState, formAction, pending] = useActionState(action, INITIAL_STATE);
+  // A successful server-action redirect can finish before navigation unmounts this form.
+  const state = actionState ?? INITIAL_STATE;
 
   return (
     <main className="min-h-screen bg-background px-5 py-6 sm:px-8">

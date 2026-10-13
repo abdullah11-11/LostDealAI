@@ -10,7 +10,9 @@ import { INDUSTRIES, type FormActionState } from "@/lib/auth/validation";
 const INITIAL_STATE: FormActionState = {};
 
 export function OnboardingForm({ needsFullName, nextPath = "/dashboard" }: { needsFullName: boolean; nextPath?: string }) {
-  const [state, formAction, pending] = useActionState(onboardingAction, INITIAL_STATE);
+  const [actionState, formAction, pending] = useActionState(onboardingAction, INITIAL_STATE);
+  // A successful server-action redirect can finish before navigation unmounts this form.
+  const state = actionState ?? INITIAL_STATE;
 
   return (
     <form action={formAction} className="mt-8 space-y-5" aria-label="Set up workspace">

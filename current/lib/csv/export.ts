@@ -6,7 +6,7 @@ import type { NormalizedDeal } from "@/lib/csv/validation";
 
 export type CanonicalCsvRowValues = Readonly<Record<CanonicalField, string | null>>;
 
-const FORMULA_PREFIX = /^[=+\-@]/;
+const FORMULA_PREFIX = /^[\s\u0000-\u001f]*[=+\-@]/;
 
 /** Keeps spreadsheet applications from interpreting customer-provided text as a formula. */
 export function makeSpreadsheetTextInert(value: string): string {

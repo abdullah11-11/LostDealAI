@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Bot, LoaderCircle } from "lucide-react";
 
 import { buttonStyles } from "@/components/ui";
+import { useWorkspaceAccess } from "@/components/workspace-access";
 
 type BatchResult = {
   selected: number;
@@ -16,6 +17,7 @@ type BatchResult = {
 
 export function AnalyzePendingDeals({ pendingCount, batchLimit }: { pendingCount: number; batchLimit: number }) {
   const router = useRouter();
+  const { restricted } = useWorkspaceAccess();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BatchResult | null>(null);
@@ -23,7 +25,7 @@ export function AnalyzePendingDeals({ pendingCount, batchLimit }: { pendingCount
   const batchCount = Math.min(pendingCount, batchLimit);
 
   async function analyzeBatch() {
-    if (loading) return;
+    if (loading || restricted) return;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -51,7 +53,7 @@ export function AnalyzePendingDeals({ pendingCount, batchLimit }: { pendingCount
   if (!confirming) {
     return (
       <div className="sm:text-right">
-        <button type="button" onClick={() => setConfirming(true)} className={buttonStyles("outline")}>
+        <button type="button" disabled={restricted} title={restricted ? "An active plan is required for new AI analyses." : undefined} onClick={() => setConfirming(true)} className={buttonStyles("outline")}>
           <Bot aria-hidden="true" className="size-4" /> Analyze Pending Deals
         </button>
         {result && (
@@ -68,10 +70,10 @@ export function AnalyzePendingDeals({ pendingCount, batchLimit }: { pendingCount
     <div className="max-w-sm rounded-xl border border-brand/30 bg-brand/10 p-3 text-left">
       <p className="text-sm font-bold text-content">Analyze {batchCount} pending {batchCount === 1 ? "deal" : "deals"}?</p>
       <p className="mt-1 text-xs leading-5 text-secondary">This will use AI processing. A maximum of {batchLimit} deals runs at once.</p>
-      <p className="mt-1 text-[11px] leading-5 text-secondary">Relevant sales notes or transcripts are sent to the configured AI provider. Avoid unnecessary sensitive personal information.</p>
+      <p className="mt-1 text-[13px] leading-5 text-secondary">Relevant sales notes or transcripts are sent to the configured AI provider. Avoid unnecessary sensitive personal information.</p>
       <div className="mt-3 flex gap-2">
         <button type="button" disabled={loading} onClick={() => setConfirming(false)} className={buttonStyles("outline", "h-9 px-3")}>Cancel</button>
-        <button type="button" disabled={loading} onClick={analyzeBatch} className={buttonStyles("primary", "h-9 px-3")}>
+        <button type="button" disabled={loading || restricted} onClick={analyzeBatch} className={buttonStyles("primary", "h-9 px-3")}>
           {loading && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
           {loading ? "Analyzing…" : "Confirm"}
         </button>

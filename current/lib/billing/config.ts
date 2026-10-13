@@ -20,3 +20,10 @@ export function getBillingUsageAuthoritySecret(): string | null {
   const configured = process.env.BILLING_USAGE_AUTHORITY_SECRET?.trim();
   return configured && /^[0-9a-f]{64}$/i.test(configured) ? configured : null;
 }
+
+/** Distinct Live billing authority; never reused from the Sandbox/usage secret. */
+export function getLiveBillingAuthoritySecret(): string | null {
+  const configured = process.env.PADDLE_LIVE_BILLING_AUTHORITY_SECRET?.trim();
+  const usage = getBillingUsageAuthoritySecret();
+  return configured && /^[0-9a-f]{64}$/i.test(configured) && configured.toLowerCase() !== usage?.toLowerCase() ? configured : null;
+}

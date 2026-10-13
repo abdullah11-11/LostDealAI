@@ -10,11 +10,11 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-5 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        {eyebrow && <p className="text-xs font-bold tracking-[0.08em] text-brand-content">{eyebrow}</p>}
-        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.025em] text-content sm:text-4xl">{title}</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-secondary">{description}</p>
+        {eyebrow && <p className="text-xs font-semibold text-secondary">{eyebrow}</p>}
+        <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-content sm:text-3xl">{title}</h1>
+        <p className="mt-2 max-w-2xl text-base leading-6 text-secondary">{description}</p>
       </div>
       {action}
     </div>

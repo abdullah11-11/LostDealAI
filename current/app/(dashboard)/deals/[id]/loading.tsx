@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui";
 
 export default function DealIntelligenceLoading() {
   return (
-    <main className="mx-auto max-w-7xl" aria-label="Loading deal intelligence" aria-busy="true">
+    <div className="mx-auto max-w-7xl" aria-label="Loading deal intelligence" aria-busy="true">
       <div className="flex justify-between gap-4">
         <Skeleton className="h-10 w-32" />
         <Skeleton className="h-10 w-32" />
@@ -13,6 +13,6 @@ export default function DealIntelligenceLoading() {
         <Skeleton className="h-56 rounded-2xl border border-line bg-panel" />
         <Skeleton className="h-56 rounded-2xl border border-line bg-panel" />
       </div>
-    </main>
+    </div>
   );
 }

@@ -45,3 +45,19 @@ normalized deal fields plus upload metadata (safe filename, counts, status,
 creator, and timestamps). Deleting one deal removes that deal and its cascaded
 analysis; it leaves its upload metadata, other deals, users, and organization
 untouched.
+
+## Prompt 17A update
+
+Sensitive APIs also obtain a fresh Auth user, refreshed SSR cookies forward
+downstream, and auth pages are no-store. Actual streamed-byte bounds replace
+header-only request-size assumptions. Imports and usage are one protected
+transaction; direct deal/upload INSERT/UPDATE grants are revoked. Tenant-RLS
+provider results persist with metering for replay. Expiring token/mode claims
+fence analysis completion/failure. Saved PENDING analysis keeps quota until
+finalization. Safe application request IDs correlate failures without raw
+provider/auth identifiers or sensitive payloads.
+
+Normalized conversion output/provenance is retained for retry; original CSV
+bytes are not stored. Commercial retention/deletion policy must cover these
+copies. See PROMPT_17A_HARDENING.md for verified controls, measured boundaries,
+known lower-severity issues and deployment/restore limits.

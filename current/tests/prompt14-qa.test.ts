@@ -185,7 +185,7 @@ test("Prompt 14 normal page-load sources have no OpenAI or automatic scoring wri
 });
 
 test("Prompt 14 public assets contain only the intended branded and synthetic files", () => {
-  const files = readdirSync(`${root}/public`, { recursive: true }).map(String);
+  const files = readdirSync(`${root}/public`, { recursive: true }).map(file => String(file).replaceAll("\\", "/"));
   assert.ok(files.includes("lostdeal-favicon-v2.ico"));
   assert.ok(files.includes("examples/smart-import-crm-example.csv"));
   for (const file of files) {
@@ -229,7 +229,7 @@ test("Prompt 14 migrations remain immutable alongside authorized Prompt 15 forwa
     "20260905083511_prompt15_3_2_usage_reservation_runtime_hotfix.sql",
     "20260906080228_prompt15_3_3_recovery_sort_rpc_auth_hotfix.sql",
     "20260908055554_prompt15_3_5_deep_semantic_diagnostic_hardening.sql",
-    "20260916095842_prompt16_paddle_billing_foundation.sql",
+    "20260916095842_prompt16_paddle_billing_foundation.sql", "20260917144440_prompt16_authority_dual_verifier.sql", "20260921064300_prompt16_paddle_simulator_event_id_compat.sql", "20260921073247_prompt16_authority_rotation_finalize.sql", "20260922083319_prompt16_billing_operation_rejection_recovery.sql", "20261005185926_prompt17a_atomic_operations_and_authorization.sql",
   ]);
   const runtime = ["app", "components", "lib"].flatMap((directory) => {
     const walk = (path: string): string[] => readdirSync(path, { withFileTypes: true }).flatMap((entry) => entry.isDirectory() ? walk(`${path}/${entry.name}`) : [`${path}/${entry.name}`]);

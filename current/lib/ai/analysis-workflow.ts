@@ -57,6 +57,7 @@ export type DealAnalysisStore = {
   reserveUsage?(dealId: string): Promise<AnalysisUsageReservation>;
   finalizeUsage?(dealId: string, usageKey: string): Promise<boolean>;
   claim(dealId: string): Promise<boolean>;
+  recoverInterrupted?(dealId: string): Promise<boolean>;
   persistAndComplete(dealId: string, data: AnalysisPersistenceData): Promise<boolean>;
   fail(dealId: string, code: AnalysisErrorCode, diagnostic: AnalysisDiagnosticCategory | null): Promise<void>;
   countPending(): Promise<number>;
@@ -164,7 +165,9 @@ export async function analyzeDealWithStore(
   }
 
   if (deal.analysis_status === "completed") return { status: "completed", fresh: false };
-  if (deal.analysis_status === "processing") return { status: "processing" };
+  if (deal.analysis_status === "processing") {
+    if (!store.recoverInterrupted || !await store.recoverInterrupted(dealId)) return { status: "processing" };
+  }
 
   let usageKey: string | null = null;
   let requiresFinalization = false;

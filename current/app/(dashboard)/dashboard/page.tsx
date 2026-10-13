@@ -17,10 +17,11 @@ import {
 } from "lucide-react";
 
 import { DealPriorityBadge } from "@/components/deal-status";
+import { GettingStarted } from "@/components/getting-started";
 import { LocalTabs } from "@/components/local-tabs";
 import { PageHeader } from "@/components/page-heading";
 import { RecoveryScoreActions } from "@/components/recovery-score-actions";
-import { Badge, Card, EmptyState, Table, buttonStyles } from "@/components/ui";
+import { Badge, Card, EmptyState, buttonStyles } from "@/components/ui";
 import { requireOrganization } from "@/lib/auth/server";
 import { formatDealCurrency, formatDealTimestamp, humanizeDealEnum } from "@/lib/deals/format";
 import { getDashboardData } from "@/lib/dashboard/server";
@@ -63,7 +64,7 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         eyebrow="Overview"
-        title="Recovery Overview"
+        title="Overview"
         description="Understand your lost opportunities, identify the strongest recovery candidates, and see what needs attention next."
         action={
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -74,6 +75,8 @@ export default async function DashboardPage() {
           </div>
         }
       />
+
+      {!data.errors.core && <GettingStarted totalDeals={data.metrics.totalDeals} analyzedDeals={data.metrics.analyzedDeals} scoredDeals={data.metrics.scoredDeals} />}
 
       {data.errors.core ? (
         <div role="alert" className="mt-8 flex min-h-72 flex-col items-center justify-center rounded-2xl border border-red-500/35 bg-red-500/10 px-6 py-12 text-center shadow-sm">
@@ -104,7 +107,7 @@ function DashboardContent({ data }: { data: Awaited<ReturnType<typeof getDashboa
   return (
     <>
       <section aria-labelledby="at-a-glance-heading" className="mt-7">
-        <h2 id="at-a-glance-heading" className="text-xs font-extrabold uppercase tracking-[0.14em] text-muted">At a Glance</h2>
+        <h2 id="at-a-glance-heading" className="text-sm font-semibold text-secondary">At a Glance</h2>
         <div aria-label="Recovery metrics" className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Total Lost Deal Value"
@@ -138,7 +141,7 @@ function DashboardContent({ data }: { data: Awaited<ReturnType<typeof getDashboa
       </section>
 
       <section aria-labelledby="next-actions-heading" className="mt-6">
-        <h2 id="next-actions-heading" className="text-xs font-extrabold uppercase tracking-[0.14em] text-muted">What Should I Do?</h2>
+        <h2 id="next-actions-heading" className="text-sm font-semibold text-secondary">What Should I Do?</h2>
       {metrics.analyzedDeals === 0 && (
         <Callout
           icon={<ListChecks aria-hidden="true" className="size-5" />}
@@ -160,8 +163,8 @@ function DashboardContent({ data }: { data: Awaited<ReturnType<typeof getDashboa
       <div className="mt-4 grid items-start gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(20rem,0.75fr)]">
         <Card
           title="Top Recovery Opportunities"
-          description="The highest-ranked scored deals to review next."
-          action={<Link href={SCORED_DEALS_URL} className="text-sm font-bold text-brand-content hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25">View All Deals</Link>}
+          description="Start with the opportunities most worth a closer look."
+          action={<Link href="/recovery" className="text-sm font-bold text-brand-content hover:underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25">Open Recovery Queue</Link>}
           className="overflow-hidden"
         >
         {data.errors.topOpportunities ? (
@@ -169,26 +172,21 @@ function DashboardContent({ data }: { data: Awaited<ReturnType<typeof getDashboa
             Top recovery opportunities couldn&apos;t be loaded. The rest of your overview is still available; refresh to retry this section.
           </div>
         ) : data.topOpportunities.length > 0 ? (
-          <Table label="Top Recovery Opportunities" headers={["Customer", "Deal Value", "Lost Reason", "Score", "Priority", "Next Action"]}>
-            {data.topOpportunities.map((deal) => (
-              <tr key={deal.id} className="transition-colors hover:bg-panel-raised">
-                <td className="px-4 py-3">
-                  <Link href={`/deals/${deal.id}`} className="font-bold text-content hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25">
-                    {deal.customerName ?? "Unnamed customer"}
-                  </Link>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-secondary">{formatDealCurrency(deal.dealValue)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-secondary">{humanizeDealEnum(deal.analysis?.lostReason ?? null)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-extrabold text-content">{deal.analysis?.recoveryScore}/100</td>
-                <td className="px-4 py-3"><DealPriorityBadge priority={deal.analysis?.recoveryPriority ?? null} /></td>
-                <td className="max-w-60 px-4 py-3 text-sm leading-5 text-secondary">
-                  <Link href={`/deals/${deal.id}`} className="line-clamp-2 hover:text-content focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25">
-                    {deal.analysis?.recommendedAction ?? "Review deal analysis"}
-                  </Link>
-                </td>
-              </tr>
+          <ol className="divide-y divide-line" aria-label="Top Recovery Opportunities">
+            {data.topOpportunities.map((deal, index) => (
+              <li key={deal.id}>
+                <Link href={`/deals/${deal.id}`} className="group grid gap-3 px-5 py-5 transition-colors hover:bg-panel-raised sm:grid-cols-[24px_minmax(0,1fr)_auto] sm:px-6">
+                  <span className="hidden pt-1 text-sm tabular-nums text-muted sm:block">{String(index + 1).padStart(2, "0")}</span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2"><h3 className="break-words text-base font-semibold text-content group-hover:text-brand-content">{deal.customerName ?? "Unnamed customer"}</h3><DealPriorityBadge priority={deal.analysis?.recoveryPriority ?? null} /></div>
+                    <p className="mt-1 text-xs text-secondary">{humanizeDealEnum(deal.analysis?.lostReason ?? null)} · {formatDealCurrency(deal.dealValue)} quoted value</p>
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-secondary">{deal.analysis?.recommendedAction ?? "Review the saved deal analysis before your next move."}</p>
+                  </div>
+                  <div className="flex items-center gap-3 self-start text-right"><div><span className="metric-value text-2xl font-semibold text-content">{deal.analysis?.recoveryScore}</span><span className="text-xs text-muted"> / 100</span><p className="text-xs text-secondary">Recovery Score</p></div><ArrowUpRight aria-hidden="true" className="size-4 text-muted group-hover:text-brand-content" /></div>
+                </Link>
+              </li>
             ))}
-          </Table>
+          </ol>
         ) : (
           <div className="p-5 sm:p-6">
             <EmptyState
@@ -205,7 +203,7 @@ function DashboardContent({ data }: { data: Awaited<ReturnType<typeof getDashboa
       </section>
 
       <section aria-labelledby="insights-heading" className="mt-6">
-        <h2 id="insights-heading" className="mb-3 text-xs font-extrabold uppercase tracking-[0.14em] text-muted">Insights</h2>
+        <h2 id="insights-heading" className="mb-3 text-sm font-semibold text-secondary">Insights</h2>
         <LocalTabs
           label="Recovery overview sections"
           defaultTab={metrics.completedButUnscored > 0 ? "coverage" : "insights"}
@@ -250,14 +248,10 @@ function MetricCard({
   icon: ReactNode;
 }) {
   return (
-    <article className="group rounded-2xl border border-line bg-panel shadow-sm transition hover:border-brand/30">
+    <article className="group rounded-xl border border-line bg-panel transition-colors hover:border-line-strong">
       <Link href={href} className="block h-full rounded-2xl p-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25 sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-brand/10 text-brand-strong">{icon}</span>
-          <ArrowUpRight aria-hidden="true" className="size-4 text-secondary transition group-hover:text-brand" />
-        </div>
-        <p className="mt-4 text-2xl font-semibold tracking-[-0.035em] text-content">{value}</p>
-        <h2 className="mt-2 text-sm font-bold text-content">{label}</h2>
+        <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-medium text-secondary">{label}</h2><span aria-hidden="true" className="text-muted [&>svg]:size-4">{icon}</span></div>
+        <p className="metric-value mt-3 text-3xl font-semibold text-content">{value}</p>
         <p className="mt-1 text-xs leading-5 text-secondary">{context}</p>
       </Link>
     </article>
@@ -328,7 +322,7 @@ function AnalysisCoverage({ metrics }: { metrics: DashboardMetrics }) {
             </div>
             <RecoveryScoreActions unscoredCount={metrics.completedButUnscored} analyzedCount={metrics.analyzedDeals} batchLimit={SCORING_BATCH_LIMIT} />
           </div>
-          <p className="mt-3 text-[11px] leading-5 text-secondary">Refreshing scores uses deterministic scoring and no AI credits. Scores are never recalculated by opening this dashboard.</p>
+          <p className="mt-3 text-[13px] leading-5 text-secondary">Refreshing scores uses deterministic scoring and no AI credits. Scores are never recalculated by opening this dashboard.</p>
         </div>
       </div>
     </Card>
@@ -338,7 +332,7 @@ function AnalysisCoverage({ metrics }: { metrics: DashboardMetrics }) {
 function StatusCount({ label, value, href }: { label: string; value: number; href: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel-raised p-3">
-      <dt className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-secondary">{label}</dt>
+      <dt className="text-xs font-extrabold uppercase tracking-[0.08em] text-secondary">{label}</dt>
       <dd className="mt-2">
         <Link href={href} className="text-xl font-semibold text-content hover:text-brand focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25">{value.toLocaleString("en-US")}</Link>
       </dd>

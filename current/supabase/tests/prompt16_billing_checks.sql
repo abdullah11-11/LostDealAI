@@ -12,6 +12,9 @@ do $$ begin
      has_column_privilege('authenticated','public.organization_subscriptions','plan_code','UPDATE') then
     raise exception 'direct billing mutation permitted'; end if;
   if not has_function_privilege('anon','public.synchronize_paddle_subscription(text,jsonb,text)','EXECUTE') then raise exception 'webhook RPC unreachable'; end if;
+  if has_function_privilege('anon','public.abort_billing_operation(text,uuid,uuid)','EXECUTE') or
+     not has_function_privilege('authenticated','public.abort_billing_operation(text,uuid,uuid)','EXECUTE') then
+    raise exception 'abort operation grant mismatch'; end if;
 end $$;
 create or replace function private.assert_billing_authority(secret text) returns void
 language plpgsql security definer set search_path='' as $$ begin
@@ -19,7 +22,7 @@ language plpgsql security definer set search_path='' as $$ begin
 end $$;
 
 do $$
-declare uid uuid; org uuid:=gen_random_uuid(); other_org uuid:=gen_random_uuid(); intent jsonb; ev jsonb; result text;
+declare uid uuid; org uuid:=gen_random_uuid(); other_org uuid:=gen_random_uuid(); intent jsonb; ev jsonb; result text; operation uuid;
   anchor_start timestamptz; anchor_end timestamptz; trial_end timestamptz; before_usage jsonb; n integer;
 begin
   select id into uid from auth.users order by created_at limit 1;
@@ -38,6 +41,7 @@ begin
   begin perform public.create_billing_checkout_intent('p16-synthetic-test-only',other_org,'PRO'); raise exception 'cross org accepted'; exception when insufficient_privilege then null; end;
   update public.organization_members set role='member' where organization_id=org;
   begin perform public.create_billing_checkout_intent('p16-synthetic-test-only',org,'PRO'); raise exception 'member accepted'; exception when insufficient_privilege then null; end;
+  begin perform public.abort_billing_operation('p16-synthetic-test-only',org,gen_random_uuid()); raise exception 'member abort accepted'; exception when insufficient_privilege then null; end;
   update public.organization_members set role='owner' where organization_id=org;
   update public.organization_subscriptions set plan_code='INTERNAL' where organization_id=org;
   begin perform public.create_billing_checkout_intent('p16-synthetic-test-only',org,'PRO'); raise exception 'internal accepted'; exception when raise_exception then if sqlerrm<>'CHECKOUT_UNAVAILABLE' then raise; end if; end;
@@ -57,9 +61,22 @@ begin
   ev:=ev||jsonb_build_object('event_id','evt_'||repeat('b',26),'occurred_at',clock_timestamp()-interval '30 seconds','status','past_due');
   if public.synchronize_paddle_subscription('p16-synthetic-test-only',ev)<>'STALE_EVENT' then raise exception 'stale failed'; end if;
   begin perform public.create_billing_checkout_intent('p16-synthetic-test-only',org,'PRO'); raise exception 'second subscription allowed'; exception when raise_exception then if sqlerrm<>'SUBSCRIPTION_CONFLICT' then raise; end if; end;
-  ev:=ev||jsonb_build_object('event_id','evt_'||repeat('c',26),'event_type','subscription.updated','occurred_at',clock_timestamp()-interval '19 seconds','status','active','price_id','pri_01m2mqs3q7f9r0kyqzmrt6gkgg','intent_id',null);
-  perform public.begin_billing_operation('p16-synthetic-test-only',org,'PRO');
+  operation:=public.begin_billing_operation('p16-synthetic-test-only',org,'PRO');
+  update public.organization_subscriptions set billing_operation_started_at=clock_timestamp()-interval '3 minutes' where organization_id=org;
+  ev:=ev||jsonb_build_object('event_id','reconciliation-ui-proof','event_type','reconciliation','occurred_at',clock_timestamp()-interval '19 seconds','status','active','price_id','pri_01m2mqgrjazqnz7wyex9p7dyt8','intent_id',null);
+  update public.organization_members set role='member' where organization_id=org;
+  begin perform public.synchronize_paddle_subscription('p16-synthetic-test-only',ev,'evt_'||repeat('a',26)); raise exception 'member reconciliation accepted'; exception when insufficient_privilege then null; end;
+  update public.organization_members set role='owner' where organization_id=org;
+  if public.synchronize_paddle_subscription('p16-synthetic-test-only',ev,'evt_'||repeat('a',26))<>'APPLIED' then raise exception 'eligible reconciliation failed'; end if;
+  if exists(select 1 from public.organization_subscriptions where organization_id=org and (billing_operation_id is not null or billing_operation_started_at is not null or billing_operation_target is not null)) then raise exception 'eligible reconciliation did not clear stale operation'; end if;
+  if exists(select 1 from public.organization_subscriptions where organization_id=org and (plan_code<>'STARTER' or subscription_status<>'active')) then raise exception 'reconciliation changed valid subscription'; end if;
+  ev:=ev||jsonb_build_object('event_id','evt_'||repeat('c',26),'event_type','subscription.updated','occurred_at',clock_timestamp()-interval '18 seconds','status','active','price_id','pri_01m2mqs3q7f9r0kyqzmrt6gkgg','intent_id',null);
+  operation:=public.begin_billing_operation('p16-synthetic-test-only',org,'PRO');
   begin perform public.begin_billing_operation('p16-synthetic-test-only',org,'PRO'); raise exception 'duplicate mutation allowed'; exception when raise_exception then if sqlerrm<>'BILLING_OPERATION_PENDING' then raise; end if; end;
+  if public.abort_billing_operation('p16-synthetic-test-only',org,gen_random_uuid()) then raise exception 'wrong operation token cleared lock'; end if;
+  if not public.abort_billing_operation('p16-synthetic-test-only',org,operation) then raise exception 'exact operation token did not clear lock'; end if;
+  if exists(select 1 from public.organization_subscriptions where organization_id=org and (billing_operation_id is not null or billing_operation_started_at is not null or billing_operation_target is not null)) then raise exception 'operation metadata not cleared atomically'; end if;
+  operation:=public.begin_billing_operation('p16-synthetic-test-only',org,'PRO');
   if public.synchronize_paddle_subscription('p16-synthetic-test-only',ev)<>'APPLIED' then raise exception 'upgrade failed'; end if;
   for n in 1..5 loop
     ev:=ev||jsonb_build_object('event_id','evt_'||repeat((n+1)::text,26),'occurred_at',clock_timestamp()-(18-n)*interval '1 second',

@@ -22,20 +22,24 @@ function id(value: unknown, prefix: string): string {
   if (typeof value !== "string" || !new RegExp(`^${prefix}_[a-z0-9]{26}$`).test(value)) throw new BillingError("INVALID_EVENT");
   return value;
 }
+function eventId(value: unknown): string {
+  if (typeof value !== "string" || !/^(?:evt|ntfsimevt)_[a-z0-9]{26}$/.test(value)) throw new BillingError("INVALID_EVENT");
+  return value;
+}
 function date(value: unknown): string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) || !Number.isFinite(Date.parse(value))) throw new BillingError("INVALID_EVENT");
   // Preserve provider microseconds for PostgreSQL ordering; JS ISO conversion
   // would silently truncate them to milliseconds.
   return value;
 }
-export function normalizePaddleEvent(value: unknown): BillingEvent | null {
+export function normalizePaddleEvent(value: unknown, options: { prices?: Readonly<Record<PaidPlan, string>>; allowSimulatorIds?: boolean } = {}): BillingEvent | null {
   const e = record(value);
   if (!PADDLE_EVENTS.includes(e.event_type as typeof PADDLE_EVENTS[number])) return null;
   const d = record(e.data);
   if (!Array.isArray(d.items) || d.items.length !== 1) throw new BillingError("UNKNOWN_PRICE");
   const item = record(d.items[0]);
   const price = record(item.price);
-  if (item.quantity !== 1 || !Object.values(PADDLE_PRICES).includes(price.id as typeof PADDLE_PRICES[PaidPlan])) throw new BillingError("UNKNOWN_PRICE");
+  if (item.quantity !== 1 || !Object.values(options.prices ?? PADDLE_PRICES).includes(String(price.id))) throw new BillingError("UNKNOWN_PRICE");
   if (!["active", "past_due", "paused", "canceled", "trialing"].includes(String(d.status))) throw new BillingError("INVALID_STATUS");
   const period = d.current_billing_period == null ? null : record(d.current_billing_period);
   const change = d.scheduled_change == null ? null : record(d.scheduled_change);
@@ -44,12 +48,13 @@ export function normalizePaddleEvent(value: unknown): BillingEvent | null {
   const intent = custom?.lostdeal_checkout_intent_id;
   if (intent != null && (typeof intent !== "string" || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(intent))) throw new BillingError("MISSING_CHECKOUT_INTENT");
   const result: BillingEvent = {
-    event_id: id(e.event_id, "evt"), event_type: String(e.event_type), occurred_at: date(e.occurred_at),
+    event_id: eventId(e.event_id), event_type: String(e.event_type), occurred_at: date(e.occurred_at),
     subscription_id: id(d.id, "sub"), customer_id: id(d.customer_id, "ctm"), price_id: String(price.id), status: String(d.status),
     intent_id: typeof intent === "string" ? intent : null,
     period_start: period ? date(period.starts_at) : null, period_end: period ? date(period.ends_at) : null,
     scheduled_action: change ? String(change.action) : null, scheduled_at: change ? date(change.effective_at) : null,
   };
+  if (options.allowSimulatorIds === false && !/^evt_[a-z0-9]{26}$/.test(result.event_id)) throw new BillingError("INVALID_EVENT");
   if (result.status === "active" && (!period || Date.parse(result.period_end!) <= Date.parse(result.period_start!))) throw new BillingError("INVALID_EVENT");
   return result;
 }

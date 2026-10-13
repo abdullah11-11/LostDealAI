@@ -62,15 +62,9 @@ export default async function DealsPage({
     <div className="mx-auto max-w-7xl">
       <PageHeader
         eyebrow="Pipeline"
-        title="Lost Deals"
-        description="Review imported lost opportunities, analyze loss signals, and rank completed analyses by Recovery Score."
-        action={<div className="flex flex-col items-stretch gap-2 sm:items-end">
-          {result.pendingCount > 0 && <AnalyzePendingDeals pendingCount={result.pendingCount} batchLimit={AI_CONFIG.batchSizeLimit} />}
-          {(result.unscoredCount > 0 || result.analyzedCount > 0) && <RecoveryScoreActions unscoredCount={result.unscoredCount} analyzedCount={result.analyzedCount} batchLimit={SCORING_BATCH_LIMIT} />}
-          <Link href="/upload" className={buttonStyles()}>
-            Import Deals <ArrowUpRight aria-hidden="true" className="size-4" />
-          </Link>
-        </div>}
+        title="Deals"
+        description="Your lost opportunities, organized. Find the context and evidence for your next recovery decision."
+        action={<Link href="/upload" className={buttonStyles()}>Import Deals <ArrowUpRight aria-hidden="true" className="size-4" /></Link>}
       />
 
       {deletedNotice && (
@@ -79,7 +73,8 @@ export default async function DealsPage({
         </div>
       )}
 
-      <section className="mt-7 overflow-hidden rounded-2xl border border-line bg-panel shadow-sm">
+      <section className="mt-7 rounded-2xl border border-line bg-panel">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3"><p className="text-sm text-secondary"><strong className="font-semibold text-content">{result.organizationCount.toLocaleString()}</strong> deals · {result.analyzedCount.toLocaleString()} analyzed</p><details className="relative"><summary className="flex min-h-11 list-none items-center gap-2 rounded-lg px-3 text-sm font-semibold text-content hover:bg-panel-hover [&::-webkit-details-marker]:hidden"><SlidersHorizontal aria-hidden="true" className="size-4" />Deal actions</summary><div className="absolute right-0 z-10 mt-2 w-[min(360px,calc(100vw-48px))] space-y-4 rounded-xl border border-line bg-panel p-4 shadow-lg">{result.pendingCount > 0 && <AnalyzePendingDeals pendingCount={result.pendingCount} batchLimit={AI_CONFIG.batchSizeLimit} />}{(result.unscoredCount > 0 || result.analyzedCount > 0) && <RecoveryScoreActions unscoredCount={result.unscoredCount} analyzedCount={result.analyzedCount} batchLimit={SCORING_BATCH_LIMIT} />}{result.pendingCount === 0 && result.analyzedCount === 0 && <p className="text-sm text-secondary">Import deals to make analysis and scoring available.</p>}</div></details></div>
         <form action="/deals" method="get" className="border-b border-line p-4 sm:p-5" aria-label="Search and filter deals">
           <div className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr_0.65fr]">
             <Input
@@ -185,15 +180,16 @@ export default async function DealsPage({
           </div>
         ) : (
           <>
-            <Table
-              className="min-w-[1280px]"
+            <div className="hidden lg:block"><Table
+              className="min-w-[920px]"
               label="Imported lost deals"
-              headers={["Customer", "Deal Value", "Quote Date", "Service", "Salesperson", "Lost Reason", "Analysis Status", "Recovery Score", "Priority"]}
+              headers={["Customer", "Quoted value", "Lost reason", "Analysis", "Recovery", "Buying intent", "Confidence"]}
             >
               {result.deals.map((deal) => (
                 <DealRow key={deal.id} deal={deal} returnTo={currentListUrl} />
               ))}
-            </Table>
+            </Table></div>
+            <div className="grid divide-y divide-line lg:hidden">{result.deals.map(deal => <DealMobileRow key={deal.id} deal={deal} returnTo={currentListUrl} />)}</div>
             <DealsPagination state={state} page={result.page} pageCount={result.pageCount} total={result.filteredCount} />
           </>
         )}
@@ -204,25 +200,18 @@ export default async function DealsPage({
 
 function DealRow({ deal, returnTo }: { deal: DealListItem; returnTo: string }) {
   const href = `/deals/${deal.id}?from=${encodeURIComponent(returnTo)}`;
-  const linkClass = "block rounded-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/25";
-  return (
-    <tr className="transition-colors hover:bg-panel-raised">
-      <td className="max-w-64 px-4 py-2.5">
-        <Link href={href} className={linkClass}>
-          <span title={deal.customer_name || "Unnamed customer"} className="block truncate font-bold text-content hover:text-brand">{deal.customer_name || "Unnamed customer"}</span>
-          {deal.external_deal_id && <span title={deal.external_deal_id} className="mt-0.5 block truncate text-[11px] text-secondary">{deal.external_deal_id}</span>}
-        </Link>
-      </td>
-      <td className="whitespace-nowrap px-4 py-2.5 text-sm font-semibold text-secondary"><Link href={href} className={linkClass}>{formatDealCurrency(deal.deal_value)}</Link></td>
-      <td className="whitespace-nowrap px-4 py-2.5 text-sm text-secondary"><Link href={href} className={linkClass}>{formatDealDate(deal.quote_date)}</Link></td>
-      <td className="whitespace-nowrap px-4 py-2.5 text-sm text-secondary"><Link href={href} className={linkClass}>{deal.service_type || "—"}</Link></td>
-      <td className="whitespace-nowrap px-4 py-2.5 text-sm text-secondary"><Link href={href} className={linkClass}>{deal.salesperson || "—"}</Link></td>
-      <td className="whitespace-nowrap px-4 py-2.5 text-sm text-secondary"><Link href={href} className={linkClass}>{humanizeDealEnum(deal.analysis?.lost_reason ?? null)}</Link></td>
-      <td className="whitespace-nowrap px-4 py-2.5"><Link href={href} className={linkClass}><DealStatusBadge status={deal.analysis_status} /></Link></td>
-      <td className="whitespace-nowrap px-4 py-2.5 text-sm font-extrabold text-content"><Link href={href} className={linkClass}>{deal.analysis?.recovery_score === null || deal.analysis?.recovery_score === undefined ? "—" : `${deal.analysis.recovery_score}/100`}</Link></td>
-      <td className="px-4 py-2.5"><Link href={href} className={linkClass}><DealPriorityBadge priority={deal.analysis?.recovery_priority ?? null} /></Link></td>
-    </tr>
-  );
+  return <tr className="transition-colors hover:bg-panel-raised">
+    <td className="max-w-64 px-4 py-2.5"><Link href={href} className="block rounded-sm"><span title={deal.customer_name || "Unnamed customer"} className="block truncate text-sm font-semibold text-content hover:text-brand-content">{deal.customer_name || "Unnamed customer"}</span><span className="mt-1 block truncate text-xs text-secondary">{deal.service_type || "No service recorded"}{deal.salesperson ? ` · ${deal.salesperson}` : ""}</span>{deal.external_deal_id && <span title={deal.external_deal_id} className="mt-1 block truncate font-mono text-xs text-muted">{deal.external_deal_id}</span>}</Link></td>
+    <td className="whitespace-nowrap px-4 py-2.5"><p className="font-medium tabular-nums text-content">{formatDealCurrency(deal.deal_value)}</p><p className="mt-1 text-xs text-secondary">{formatDealDate(deal.quote_date)}</p></td>
+    <td className="px-4 py-2.5 text-secondary">{humanizeDealEnum(deal.analysis?.lost_reason ?? null)}</td>
+    <td className="px-4 py-2.5"><DealStatusBadge status={deal.analysis_status} /></td>
+    <td className="px-4 py-2.5"><p className="mb-1 font-semibold tabular-nums text-content">{deal.analysis?.recovery_score === null || deal.analysis?.recovery_score === undefined ? "—" : `${deal.analysis.recovery_score}/100`}</p><DealPriorityBadge priority={deal.analysis?.recovery_priority ?? null} /></td>
+    <td className="px-4 py-2.5 tabular-nums text-secondary">{deal.analysis?.buying_intent_score === null || deal.analysis?.buying_intent_score === undefined ? "—" : `${deal.analysis.buying_intent_score}/100`}</td>
+    <td className="px-4 py-2.5 tabular-nums text-secondary">{deal.analysis ? `${deal.analysis.confidence_score}/100` : "—"}</td>
+  </tr>;
+}
+function DealMobileRow({ deal, returnTo }: { deal: DealListItem; returnTo: string }) {
+  return <Link href={`/deals/${deal.id}?from=${encodeURIComponent(returnTo)}`} className="block p-5 hover:bg-panel-raised"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="break-words text-base font-semibold">{deal.customer_name || "Unnamed customer"}</h3><p className="mt-1 text-sm text-secondary">{deal.service_type || "No service recorded"}</p></div><DealStatusBadge status={deal.analysis_status} /></div><dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-xs text-secondary">Quoted value</dt><dd className="mt-1 font-medium">{formatDealCurrency(deal.deal_value)}</dd></div><div><dt className="text-xs text-secondary">Lost reason</dt><dd className="mt-1">{humanizeDealEnum(deal.analysis?.lost_reason ?? null)}</dd></div><div><dt className="text-xs text-secondary">Recovery Score</dt><dd className="mt-1 flex flex-wrap items-center gap-2">{deal.analysis?.recovery_score ?? "—"}<DealPriorityBadge priority={deal.analysis?.recovery_priority ?? null} /></dd></div><div><dt className="text-xs text-secondary">Intent / confidence</dt><dd className="mt-1">{deal.analysis ? `${deal.analysis.buying_intent_score ?? "—"} / ${deal.analysis.confidence_score}` : "—"}</dd></div></dl></Link>;
 }
 
 function DealsPagination({

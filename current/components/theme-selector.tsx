@@ -45,7 +45,7 @@ export function ThemeSelector({ compact = false }: { compact?: boolean }) {
             const next = event.target.value;
             if (isTheme(next)) applyTheme(next);
           }}
-          className="h-9 rounded-lg border border-line-strong bg-panel px-2 text-xs font-semibold text-content outline-none transition-colors hover:bg-panel-hover focus:border-brand focus:ring-2 focus:ring-brand/20"
+          className="h-11 rounded-lg border border-line-strong bg-panel px-3 text-sm font-medium text-content outline-none transition-colors hover:bg-panel-hover focus:border-brand focus:ring-2 focus:ring-brand/20"
         >
           <option value="light">Light</option>
           <option value="dark">Dark</option>
@@ -57,7 +57,7 @@ export function ThemeSelector({ compact = false }: { compact?: boolean }) {
 
   return (
     <fieldset>
-      <legend className="mb-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted">Appearance</legend>
+      <legend className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-muted">Appearance</legend>
       <div className="grid grid-cols-3 gap-1 rounded-lg border border-line bg-panel-raised p-1">
         {themes.map((option) => (
           <button
@@ -65,7 +65,7 @@ export function ThemeSelector({ compact = false }: { compact?: boolean }) {
             type="button"
             aria-pressed={theme === option}
             onClick={() => applyTheme(option)}
-            className={`rounded-md px-2 py-1.5 text-[11px] font-bold capitalize transition-colors ${theme === option ? "bg-panel text-content shadow-sm" : "text-secondary hover:bg-panel-hover hover:text-content"}`}
+            className={`rounded-md px-2 py-1.5 text-[13px] font-bold capitalize transition-colors ${theme === option ? "bg-panel text-content shadow-sm" : "text-secondary hover:bg-panel-hover hover:text-content"}`}
           >
             {option}
           </button>

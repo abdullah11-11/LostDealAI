@@ -1,4 +1,5 @@
 import "server-only";
+import { isPaddleProvider } from "@/lib/billing/provider";
 
 import {
   getBillingEnforcementMode,
@@ -106,9 +107,9 @@ export async function reserveOrganizationUsage(
     .select("provider,subscription_status").eq("organization_id", organizationId).maybeSingle();
   // Paddle-backed workspaces enforce the existing quotas even during SHADOW.
   // A failed authority read must never become permission to spend provider credit.
-  const mode = billingState?.provider === "paddle_sandbox" ? "ENFORCED" : getBillingEnforcementMode();
+  const mode = isPaddleProvider(billingState?.provider) ? "ENFORCED" : getBillingEnforcementMode();
   if (billingError || !billingState) return failSafeReservation("ENFORCED", metric, idempotencyKey);
-  if (billingState.provider === "paddle_sandbox" && billingState.subscription_status !== "active") {
+  if (isPaddleProvider(billingState.provider) && billingState.subscription_status !== "active") {
     return failSafeReservation("ENFORCED", metric, idempotencyKey);
   }
   if (mode === "OFF") {
@@ -181,6 +182,20 @@ export async function commitOrganizationUsage(
   return !error && data === true;
 }
 
+/** Releases only this caller's unused reservation, never committed usage. */
+export async function releaseUnusedUsage(supabase: ServerSupabaseClient, organizationId: string, reservation: UsageReservation): Promise<boolean> {
+  const authoritySecret = getBillingUsageAuthoritySecret();
+  if (!authoritySecret || !reservation.reservationToken) return false;
+  try {
+    const { data, error } = await supabase.rpc("release_unused_usage", {
+      target_authority_secret: authoritySecret, target_organization_id: organizationId,
+      target_metric: reservation.metric, target_idempotency_key: reservation.idempotencyKey,
+      target_reservation_token: reservation.reservationToken,
+    });
+    return !error && data === true;
+  } catch { return false; }
+}
+
 function normalizeSubscription(value: unknown): {
   plan: PlanEntitlements;
   status: string;
@@ -196,7 +211,7 @@ function normalizeSubscription(value: unknown): {
   if (!plan || !status || !storedStart || !storedEnd) return null;
   const period = plan.planCode === "INTERNAL"
     ? utcCalendarMonth(new Date())
-    : row.provider === "paddle_sandbox" && ["STARTER", "PRO"].includes(plan.planCode)
+    : isPaddleProvider(row.provider) && ["STARTER", "PRO"].includes(plan.planCode)
       ? rollingUsagePeriod(storedStart, storedEnd, new Date())
       : { start: storedStart, end: storedEnd };
   return { plan, status, periodStart: period.start, periodEnd: period.end };
@@ -212,7 +227,7 @@ export async function getOrganizationUsageSnapshot(
     .select("plan_code,subscription_status,current_period_start,current_period_end,trial_ends_at,cancel_at_period_end,provider")
     .eq("organization_id", organizationId)
     .maybeSingle();
-  if (subscription?.provider === "paddle_sandbox") mode = "ENFORCED";
+  if (isPaddleProvider(subscription?.provider)) mode = "ENFORCED";
   const normalized = normalizeSubscription(subscription);
   if (subscriptionError || !normalized) {
     return {
